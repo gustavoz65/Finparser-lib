@@ -1,0 +1,52 @@
+{
+  "format": "qif",
+  "period_start": "2026-04-01T00:00:00Z",
+  "period_end": "2026-04-03T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-04-01T00:00:00Z",
+      "description": "MERCADO FICTICIO",
+      "amount": "-89.9",
+      "kind": "expense",
+      "id": "66ce9bbd4a10a29988e345ff",
+      "raw": [
+        "D01/04/2026",
+        "T-89,90",
+        "PMERCADO FICTICIO"
+      ],
+      "source": {
+        "line": 2
+      }
+    },
+    {
+      "date": "2026-04-03T00:00:00Z",
+      "description": "SALARIO EMPRESA X",
+      "amount": "2500",
+      "kind": "income",
+      "id": "8cc833566b18e8bbba2a5b65",
+      "raw": [
+        "D03/04/2026",
+        "T2.500,00",
+        "PSALARIO EMPRESA X"
+      ],
+      "source": {
+        "line": 6
+      }
+    },
+    {
+      "date": "2026-04-03T00:00:00Z",
+      "description": "MERCADO FICTICIO",
+      "amount": "-89.9",
+      "kind": "expense",
+      "id": "ea6ef307ed1e4713e0520b8c",
+      "raw": [
+        "D03/04/2026",
+        "T-89,90",
+        "PMERCADO FICTICIO"
+      ],
+      "source": {
+        "line": 10
+      }
+    }
+  ]
+}

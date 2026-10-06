@@ -28,6 +28,7 @@ import (
 	"github.com/gustavoz65/finparser-lib/internal/detect"
 	"github.com/gustavoz65/finparser-lib/internal/ofx"
 	"github.com/gustavoz65/finparser-lib/internal/profile"
+	"github.com/gustavoz65/finparser-lib/internal/qif"
 	"github.com/gustavoz65/finparser-lib/internal/record"
 	"github.com/gustavoz65/finparser-lib/internal/textenc"
 )
@@ -75,6 +76,9 @@ func parseBytes(data []byte, cfg config) (*Statement, error) {
 	case FormatOFX:
 		text, _ := textenc.ToUTF8(data)
 		res, err = ofx.Parse(string(text))
+	case FormatQIF:
+		text, _ := textenc.ToUTF8(data)
+		res, err = qif.Parse(string(text))
 	default:
 		return nil, fmt.Errorf("%w: formato %q não suportado", ErrUnknownFormat, format)
 	}
