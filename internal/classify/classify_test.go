@@ -17,7 +17,7 @@ func TestSign(t *testing.T) {
 		{Amount: dec("-10"), SignKnown: true},
 		{Amount: dec("0"), SignKnown: true},
 	}
-	Classify(recs)
+	Classify(recs, nil)
 	want := []record.Kind{record.Income, record.Expense, record.Unknown}
 	for i, w := range want {
 		if recs[i].Kind != w {
@@ -34,7 +34,7 @@ func TestPatterns(t *testing.T) {
 		{Description: "TARIFA PACOTE", Amount: dec("-12")},
 		{Description: "Fulano", Amount: dec("7")},
 	}
-	Classify(recs)
+	Classify(recs, nil)
 	want := []struct {
 		kind record.Kind
 		amt  string
@@ -56,7 +56,7 @@ func TestBalanceAscending(t *testing.T) {
 		{Description: "y", Amount: dec("20"), Balance: bal("50"), SignKnown: true}, // sinal errado: inverte
 		{Description: "z", Amount: dec("5"), Balance: bal("55"), SignKnown: true},  // confere
 	}
-	warns := Classify(recs)
+	warns := Classify(recs, nil)
 	want := []string{"100", "-30", "-20", "5"}
 	for i, w := range want {
 		if recs[i].Amount.String() != w {
@@ -79,7 +79,7 @@ func TestBalanceDescending(t *testing.T) {
 		{Description: "a", Amount: dec("30"), Balance: bal("70")},
 		{Description: "abertura", Amount: dec("100"), Balance: bal("100")},
 	}
-	Classify(recs)
+	Classify(recs, nil)
 	want := []string{"5", "-20", "-30", "100"}
 	for i, w := range want[:3] {
 		if recs[i].Amount.String() != w {
@@ -96,7 +96,21 @@ func TestBalanceMismatch(t *testing.T) {
 		{Amount: dec("-10"), Balance: bal("90"), SignKnown: true},
 		{Amount: dec("-10"), Balance: bal("50"), SignKnown: true},
 	}
-	if w := Classify(recs); len(w) != 1 {
+	if w := Classify(recs, nil); len(w) != 1 {
 		t.Errorf("warns = %+v", w)
+	}
+}
+
+func TestOpeningBalance(t *testing.T) {
+	recs := []record.Record{
+		{Description: "x", Amount: dec("30"), Balance: bal("70")},
+		{Description: "y", Amount: dec("5"), Balance: bal("75")},
+	}
+	Classify(recs, bal("100"))
+	if recs[0].Amount.String() != "-30" || recs[0].Kind != record.Expense {
+		t.Errorf("recs[0] = %+v", recs[0])
+	}
+	if recs[1].Kind != record.Income {
+		t.Errorf("recs[1] = %+v", recs[1])
 	}
 }

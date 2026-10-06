@@ -52,7 +52,7 @@ func buildDictionary() map[string]Role {
 	add(Amount, "valor", "quantia", "montante", "amount", "value", "valor da transacao", "valor lancamento")
 	add(Credit, "credito", "creditos", "entradas", "entrada", "credit", "valor credito")
 	add(Debit, "debito", "debitos", "saidas", "saida", "debit", "valor debito")
-	add(Balance, "saldo", "balance", "saldo apos lancamento", "saldo do dia", "saldo final")
+	add(Balance, "saldo", "saldos", "balance", "saldo apos lancamento", "saldo do dia", "saldo final")
 	add(Document, "documento", "doc", "nr doc", "n doc", "no doc", "numero do documento", "identificador", "id")
 	return d
 }
@@ -88,7 +88,7 @@ func Match(cell string) Role {
 	switch {
 	case words[0] == "data" || words[0] == "dt":
 		return Date
-	case has("saldo"):
+	case has("saldo", "saldos"):
 		return Balance
 	case has("credito", "creditos", "entradas"):
 		return Credit
@@ -263,4 +263,22 @@ func cumulative(amt, bal []*decimal.Decimal) int {
 
 func isLetter(r rune) bool {
 	return r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r > 127
+}
+
+var summaryPrefixes = []string{
+	"saldo anterior", "saldo do dia", "saldo final", "saldo inicial", "saldo em",
+	"saldo disponivel", "saldo total", "saldo bloqueado", "s a l d o", "saldo",
+	"total de entradas", "total de saidas", "total", "resumo",
+}
+
+// IsSummary informa se a descrição é de uma linha de resumo ("SALDO DO DIA",
+// "SALDO ANTERIOR", "TOTAL DE ENTRADAS"), que não é transação.
+func IsSummary(desc string) bool {
+	k := textnorm.Key(desc)
+	for _, p := range summaryPrefixes {
+		if k == p || strings.HasPrefix(k, p+" ") {
+			return true
+		}
+	}
+	return false
 }

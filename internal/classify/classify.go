@@ -11,6 +11,7 @@ import (
 
 	"github.com/gustavoz65/finparser-lib/internal/record"
 	"github.com/gustavoz65/finparser-lib/internal/textnorm"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -26,9 +27,10 @@ var (
 	}
 )
 
-// Classify ajusta sinal e Kind de recs no lugar e devolve avisos.
-func Classify(recs []record.Record) []record.Warning {
-	warns := checkBalance(recs)
+// Classify ajusta sinal e Kind de recs no lugar e devolve avisos. opening é
+// o saldo anterior à primeira transação, ou nil.
+func Classify(recs []record.Record, opening *decimal.Decimal) []record.Warning {
+	warns := checkBalance(recs, opening)
 	for i := range recs {
 		r := &recs[i]
 		if !r.SignKnown {
@@ -72,9 +74,17 @@ func byPattern(r *record.Record) {
 // checkBalance usa saldo[i] − saldo[i−1] == valor[i] para confirmar ou
 // descobrir o sinal. Detecta se o extrato está em ordem crescente ou
 // decrescente de data pela direção que explica mais linhas.
-func checkBalance(recs []record.Record) []record.Warning {
+func checkBalance(recs []record.Record, opening *decimal.Decimal) []record.Warning {
 	type pair struct{ prev, cur int } // cur é a linha cujo valor explica a diferença
 	var asc, desc []pair
+	// O saldo anterior entra como uma linha virtual de índice −1 (ordem
+	// crescente) ou len(recs) (ordem decrescente).
+	balanceAt := func(i int) *decimal.Decimal {
+		if i < 0 || i >= len(recs) {
+			return opening
+		}
+		return recs[i].Balance
+	}
 	last := -1
 	for i := range recs {
 		if recs[i].Balance == nil {
@@ -86,14 +96,22 @@ func checkBalance(recs []record.Record) []record.Warning {
 		}
 		last = i
 	}
-	if len(asc) == 0 {
+	if opening != nil && len(recs) > 0 {
+		if recs[0].Balance != nil {
+			asc = append([]pair{{-1, 0}}, asc...)
+		}
+		if n := len(recs); recs[n-1].Balance != nil {
+			desc = append(desc, pair{n, n - 1})
+		}
+	}
+	if len(asc) == 0 && len(desc) == 0 {
 		return nil
 	}
 
 	matches := func(ps []pair) int {
 		n := 0
 		for _, p := range ps {
-			diff := recs[p.cur].Balance.Sub(*recs[p.prev].Balance)
+			diff := recs[p.cur].Balance.Sub(*balanceAt(p.prev))
 			if diff.Abs().Equal(recs[p.cur].Amount.Abs()) {
 				n++
 			}
@@ -112,7 +130,7 @@ func checkBalance(recs []record.Record) []record.Warning {
 		if gap := p.cur - p.prev; gap != 1 && gap != -1 {
 			continue
 		}
-		diff := r.Balance.Sub(*recs[p.prev].Balance)
+		diff := r.Balance.Sub(*balanceAt(p.prev))
 		switch {
 		case diff.Equal(r.Amount):
 			r.SignKnown = true

@@ -1,0 +1,70 @@
+{
+  "format": "csv",
+  "bank": "itau",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "PIX TRANSF FULANO 02/03",
+      "amount": "200",
+      "balance": "1200",
+      "kind": "income",
+      "id": "0c8d6f5307e0394bb181d7b6",
+      "raw": [
+        "02/03/2026",
+        "PIX TRANSF FULANO 02/03",
+        "",
+        "200,00",
+        ""
+      ],
+      "source": {
+        "line": 8
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "TAR PACOTE SERVICOS",
+      "amount": "-29.9",
+      "kind": "expense",
+      "id": "adc2e6a4850a12cfff4c6cbe",
+      "raw": [
+        "03/03/2026",
+        "TAR PACOTE SERVICOS",
+        "",
+        "-29,90",
+        ""
+      ],
+      "source": {
+        "line": 10
+      }
+    },
+    {
+      "date": "2026-03-04T00:00:00Z",
+      "description": "PAG BOLETO ENERGIA",
+      "amount": "-150.35",
+      "balance": "1019.75",
+      "kind": "expense",
+      "id": "068c8a4dfc50374b13502673",
+      "raw": [
+        "04/03/2026",
+        "PAG BOLETO ENERGIA",
+        "",
+        "-150,35",
+        ""
+      ],
+      "source": {
+        "line": 11
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "source": {
+        "line": 13
+      },
+      "message": "data inválida \"xx/03/2026\"",
+      "raw": "xx/03/2026 | LINHA QUEBRADA |  | -1,00 | "
+    }
+  ]
+}

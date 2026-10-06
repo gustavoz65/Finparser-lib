@@ -5,7 +5,7 @@ import "testing"
 func TestDetect(t *testing.T) {
 	tests := map[string]string{
 		"Nu Pagamentos S.A. - Instituição de Pagamento": "nubank",
-		"Data,Valor,Identificador,Descrição":            "nubank",
+		"Data Valor Identificador Descrição":            "nubank",
 		"ITAÚ UNIBANCO S.A.\nExtrato conta corrente":    "itau",
 		"Banco do Brasil S.A.":                          "bb",
 		"Extrato qualquer":                              "",

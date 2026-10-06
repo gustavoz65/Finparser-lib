@@ -47,8 +47,11 @@ type Result struct {
 	Bank        string
 	PeriodStart time.Time
 	PeriodEnd   time.Time
-	Records     []Record
-	Warnings    []Warning
+	// OpeningBalance é o saldo antes da primeira transação ("SALDO
+	// ANTERIOR"), quando o extrato informa.
+	OpeningBalance *decimal.Decimal
+	Records        []Record
+	Warnings       []Warning
 }
 
 // Warn acrescenta um aviso.

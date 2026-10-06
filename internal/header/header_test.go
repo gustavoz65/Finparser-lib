@@ -71,3 +71,16 @@ func TestInfer(t *testing.T) {
 		t.Error("sem datas não deveria inferir")
 	}
 }
+
+func TestIsSummary(t *testing.T) {
+	for _, s := range []string{"SALDO DO DIA", "Saldo anterior", "TOTAL DE ENTRADAS", "Total de saídas", "S A L D O"} {
+		if !IsSummary(s) {
+			t.Errorf("IsSummary(%q) = false", s)
+		}
+	}
+	for _, s := range []string{"PIX RECEBIDO", "Saldão das Tintas", "Totalmente Café"} {
+		if IsSummary(s) {
+			t.Errorf("IsSummary(%q) = true", s)
+		}
+	}
+}

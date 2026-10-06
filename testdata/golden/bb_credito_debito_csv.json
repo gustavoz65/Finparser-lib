@@ -1,0 +1,83 @@
+{
+  "format": "csv",
+  "period_start": "2026-03-02T00:00:00Z",
+  "period_end": "2026-03-05T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Pix - Recebido",
+      "amount": "250",
+      "balance": "750",
+      "kind": "income",
+      "id": "32cebd6aaa63a1e2981d605a",
+      "raw": [
+        "02/03/2026",
+        "Pix - Recebido",
+        "123",
+        "250,00",
+        "",
+        "750,00"
+      ],
+      "source": {
+        "line": 3
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Compra com Cartão",
+      "amount": "-89.9",
+      "balance": "660.1",
+      "kind": "expense",
+      "id": "1ac0d93cbda76d04fd5105f8",
+      "raw": [
+        "03/03/2026",
+        "Compra com Cartão",
+        "456",
+        "",
+        "89,90",
+        "660,10"
+      ],
+      "source": {
+        "line": 4
+      }
+    },
+    {
+      "date": "2026-03-04T00:00:00Z",
+      "description": "Tarifa Pacote",
+      "amount": "-15",
+      "balance": "645.1",
+      "kind": "expense",
+      "id": "dcdb7f23edb608e36d0d6b71",
+      "raw": [
+        "04/03/2026",
+        "Tarifa Pacote",
+        "",
+        "",
+        "15,00",
+        "645,10"
+      ],
+      "source": {
+        "line": 5
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "Transferência",
+      "amount": "-100",
+      "balance": "545.1",
+      "kind": "expense",
+      "id": "208675e52434ab46b9172564",
+      "raw": [
+        "05/03/2026",
+        "Transferência",
+        "789",
+        "",
+        "100,00",
+        "545,10"
+      ],
+      "source": {
+        "line": 6
+      }
+    }
+  ]
+}

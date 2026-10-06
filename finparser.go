@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/gustavoz65/finparser-lib/internal/classify"
+	"github.com/gustavoz65/finparser-lib/internal/csv"
 	"github.com/gustavoz65/finparser-lib/internal/detect"
 	"github.com/gustavoz65/finparser-lib/internal/ofx"
 	"github.com/gustavoz65/finparser-lib/internal/profile"
@@ -76,6 +77,13 @@ func parseBytes(data []byte, cfg config) (*Statement, error) {
 	case FormatOFX:
 		text, _ := textenc.ToUTF8(data)
 		res, err = ofx.Parse(string(text))
+	case FormatCSV:
+		text, _ := textenc.ToUTF8(data)
+		opt := csv.Options{Reference: cfg.reference}
+		if p, ok := profile.Lookup(cfg.bank); ok {
+			opt.Profile = p
+		}
+		res, err = csv.Parse(string(text), opt)
 	case FormatQIF:
 		text, _ := textenc.ToUTF8(data)
 		res, err = qif.Parse(string(text))
@@ -107,7 +115,7 @@ func finish(format Format, res *record.Result) (*Statement, error) {
 		return nil, &ParseError{Format: format, Err: err}
 	}
 
-	warns := classify.Classify(res.Records)
+	warns := classify.Classify(res.Records, res.OpeningBalance)
 	res.Warnings = append(res.Warnings, warns...)
 
 	st := &Statement{

@@ -1,0 +1,88 @@
+{
+  "format": "csv",
+  "bank": "nubank",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-10T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-01T00:00:00Z",
+      "description": "Transferência recebida pelo Pix - EMPRESA FICTÍCIA LTDA - 00.000.000/0001-00",
+      "amount": "3500",
+      "kind": "income",
+      "id": "6a1f0000-0000-4000-8000-000000000001",
+      "raw": [
+        "01/03/2026",
+        "3500.00",
+        "6a1f0000-0000-4000-8000-000000000001",
+        "Transferência recebida pelo Pix - EMPRESA FICTÍCIA LTDA - 00.000.000/0001-00"
+      ],
+      "source": {
+        "line": 2
+      }
+    },
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Compra no débito - PADARIA SÃO JOÃO",
+      "amount": "-45.9",
+      "kind": "expense",
+      "id": "6a1f0000-0000-4000-8000-000000000002",
+      "raw": [
+        "02/03/2026",
+        "-45.90",
+        "6a1f0000-0000-4000-8000-000000000002",
+        "Compra no débito - PADARIA SÃO JOÃO"
+      ],
+      "source": {
+        "line": 3
+      }
+    },
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Compra no débito - PADARIA SÃO JOÃO",
+      "amount": "-45.9",
+      "kind": "expense",
+      "id": "6a1f0000-0000-4000-8000-000000000003",
+      "raw": [
+        "02/03/2026",
+        "-45.90",
+        "6a1f0000-0000-4000-8000-000000000003",
+        "Compra no débito - PADARIA SÃO JOÃO"
+      ],
+      "source": {
+        "line": 4
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "Transferência enviada pelo Pix - FULANO DE TAL - •••.000.000-•• - BANCO FICTÍCIO (0000) Agência: 1 Conta: 1-1",
+      "amount": "-1200",
+      "kind": "expense",
+      "id": "6a1f0000-0000-4000-8000-000000000004",
+      "raw": [
+        "05/03/2026",
+        "-1200.00",
+        "6a1f0000-0000-4000-8000-000000000004",
+        "Transferência enviada pelo Pix - FULANO DE TAL - •••.000.000-•• - BANCO FICTÍCIO (0000) Agência: 1 Conta: 1-1"
+      ],
+      "source": {
+        "line": 5
+      }
+    },
+    {
+      "date": "2026-03-10T00:00:00Z",
+      "description": "Rendimento líquido",
+      "amount": "0.87",
+      "kind": "income",
+      "id": "6a1f0000-0000-4000-8000-000000000005",
+      "raw": [
+        "10/03/2026",
+        "0.87",
+        "6a1f0000-0000-4000-8000-000000000005",
+        "Rendimento líquido"
+      ],
+      "source": {
+        "line": 6
+      }
+    }
+  ]
+}

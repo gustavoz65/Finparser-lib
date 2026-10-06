@@ -1,0 +1,84 @@
+{
+  "format": "csv",
+  "period_start": "2026-03-02T00:00:00Z",
+  "period_end": "2026-03-05T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Padaria São João",
+      "amount": "45.9",
+      "balance": "954.1",
+      "kind": "unknown",
+      "id": "8d85b2bfd53e6ad4d66c73ec",
+      "raw": [
+        "02/03",
+        "Padaria São João",
+        "45,90",
+        "954,10"
+      ],
+      "source": {
+        "line": 1
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Fulano de Tal",
+      "amount": "200",
+      "balance": "1154.1",
+      "kind": "income",
+      "id": "b4e3fe802c254afc35140599",
+      "raw": [
+        "03/03",
+        "Fulano de Tal",
+        "200,00",
+        "1.154,10"
+      ],
+      "source": {
+        "line": 2
+      }
+    },
+    {
+      "date": "2026-03-04T00:00:00Z",
+      "description": "Tarifa",
+      "amount": "-10",
+      "balance": "1144.1",
+      "kind": "expense",
+      "id": "686dbf5674caf8cbb9414e6d",
+      "raw": [
+        "04/03",
+        "Tarifa",
+        "10,00",
+        "1.144,10"
+      ],
+      "source": {
+        "line": 3
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "Mercado Fictício",
+      "amount": "-44.1",
+      "balance": "1100",
+      "kind": "expense",
+      "id": "e49d41236464583f6a7f9ab6",
+      "raw": [
+        "05/03",
+        "Mercado Fictício",
+        "44,10",
+        "1.100,00"
+      ],
+      "source": {
+        "line": 4
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "source": {
+        "line": 1
+      },
+      "message": "data sem ano e período desconhecido; assumido 2026",
+      "raw": "02/03 | Padaria São João | 45,90 | 954,10"
+    }
+  ]
+}

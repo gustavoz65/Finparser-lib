@@ -45,9 +45,9 @@ func (b bank) Match(s string) bool {
 var banks = []bank{
 	{
 		name: "nubank", code: "260",
-		markers: []string{"nu pagamentos", "nubank", "data,valor,identificador,descricao"},
+		markers: []string{"nu pagamentos", "nubank", "data valor identificador descricao"},
 		hints: Hints{Skip: []*regexp.Regexp{
-			regexp.MustCompile(`^(saldo inicial|saldo final do periodo|rendimento liquido)\b`),
+			regexp.MustCompile(`^(saldo inicial|saldo final do periodo)\b`),
 			regexp.MustCompile(`^(tem alguma duvida|caso a solucao|ouvidoria|extrato gerado)`),
 		}},
 	},
