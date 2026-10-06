@@ -1,0 +1,8 @@
+# Extratos reais: nunca commitar
+testdata/private/
+
+# Binários e saídas locais
+/finparser-debug
+*.test
+*.out
+/out/
