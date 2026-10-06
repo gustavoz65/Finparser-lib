@@ -37,7 +37,7 @@ func run(args []string, stdout io.Writer) error {
 	out := fs.String("out", ".", "diretório de saída dos SVGs")
 	tolerance := fs.Float64("tolerance", 0.5, "tolerância de linha (× fonte)")
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "uso: finparser-debug [flags] tokens|lines|svg|parse arquivo")
+		_, _ = fmt.Fprintln(fs.Output(), "uso: finparser-debug [flags] tokens|lines|svg|parse arquivo")
 		fs.PrintDefaults()
 	}
 	if len(args) < 2 {
@@ -90,25 +90,32 @@ func run(args []string, stdout io.Writer) error {
 		return printLines(stdout, spatial.Build(toks, *tolerance))
 	default:
 		files, err := writeSVGs(*out, strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)), toks, *tolerance)
-		for _, f := range files {
-			fmt.Fprintln(stdout, f)
+		if err != nil {
+			return err
 		}
+		_, err = fmt.Fprintln(stdout, strings.Join(files, "\n"))
 		return err
 	}
 }
 
 func printTokens(w io.Writer, toks []extract.Token) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', tabwriter.AlignRight)
-	fmt.Fprintln(tw, "Page\tX\tY\tW\tFontSize\tText\t")
+	if _, err := fmt.Fprintln(tw, "Page\tX\tY\tW\tFontSize\tText\t"); err != nil {
+		return err
+	}
 	for _, t := range toks {
-		fmt.Fprintf(tw, "%d\t%.2f\t%.2f\t%.2f\t%.1f\t%q\t\n", t.Page, t.X, t.Y, t.W, t.FontSize, t.Text)
+		if _, err := fmt.Fprintf(tw, "%d\t%.2f\t%.2f\t%.2f\t%.1f\t%q\t\n", t.Page, t.X, t.Y, t.W, t.FontSize, t.Text); err != nil {
+			return err
+		}
 	}
 	return tw.Flush()
 }
 
 func printLines(w io.Writer, lines []spatial.Line) error {
 	for _, l := range lines {
-		fmt.Fprintf(w, "p%d y=%7.2f x=[%6.2f,%6.2f] %s\n", l.Page, l.Y, l.X0(), l.X1(), l.Text())
+		if _, err := fmt.Fprintf(w, "p%d y=%7.2f x=[%6.2f,%6.2f] %s\n", l.Page, l.Y, l.X0(), l.X1(), l.Text()); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -79,7 +79,7 @@ func parseFile(t *testing.T, name string, opts ...Option) *Statement {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	st, err := Parse(f, append([]Option{WithReferenceDate(ref)}, opts...)...)
 	if err != nil {
 		t.Fatalf("Parse(%s): %v", name, err)

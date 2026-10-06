@@ -1,0 +1,15 @@
+version: "2"
+
+linters:
+  # Padrão: errcheck, govet, ineffassign, staticcheck, unused.
+  # misspell fica de fora: comentários e mensagens são em português.
+  enable:
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: exported
+
+formatters:
+  enable:
+    - gofmt
