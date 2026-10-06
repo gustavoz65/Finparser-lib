@@ -99,6 +99,9 @@ func isNumeric(s string) bool {
 	return digits > 0
 }
 
+// maxSpan limita a largura analisada pelo perfil de projeção, em pontos.
+const maxSpan = 20000
+
 // Gutters encontra colunas pelo perfil de projeção (fallback do passo 4):
 // projeta as faixas [X0, X1] de todas as linhas no eixo X; as "calhas" de
 // espaço vazio que atravessam a maioria das linhas (≥ 90%) e têm pelo menos
@@ -113,6 +116,11 @@ func Gutters(lines []Line, minGap float64) []Band {
 		lo = math.Min(lo, l.X0())
 		hi = math.Max(hi, l.X1())
 		fonts = append(fonts, l.FontSize)
+	}
+	// Página A4 tem ~600pt; coordenadas absurdas (PDF malicioso) não podem
+	// virar uma alocação gigante.
+	if !(hi-lo >= 0 && hi-lo <= maxSpan) {
+		return nil
 	}
 	n := int(math.Ceil(hi-lo)) + 1
 	cover := make([]int, n)

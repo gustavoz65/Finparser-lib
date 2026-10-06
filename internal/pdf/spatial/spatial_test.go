@@ -148,3 +148,10 @@ func TestRemoveNoise(t *testing.T) {
 		t.Errorf("RemoveNoise = %q", got)
 	}
 }
+
+func TestGuttersHugeCoordinates(t *testing.T) {
+	toks := append(glyphs(1, 50, 700, "01/03 1,00"), extract.Token{Page: 1, X: 1e12, Y: 700, W: 5, FontSize: 10, Text: "x"})
+	if b := Gutters(Build(toks, 0), 1.0); b != nil {
+		t.Errorf("Gutters = %v, want nil", b)
+	}
+}
