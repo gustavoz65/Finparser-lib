@@ -460,3 +460,16 @@ func matchAny(res []*regexp.Regexp, k string) bool {
 func hasDigit(s string) bool {
 	return strings.IndexFunc(s, func(r rune) bool { return r >= '0' && r <= '9' }) >= 0
 }
+
+// Columns devolve as faixas de coluna que o parser usaria para as linhas
+// dadas: as do primeiro cabeçalho, ou as do perfil de projeção. Usado pela
+// CLI de debug para desenhar as fronteiras.
+func Columns(lines []spatial.Line) []spatial.Band {
+	for _, l := range lines {
+		if lay, ok := headerOf(l); ok {
+			return lay.bands
+		}
+	}
+	p := &parser{res: &record.Result{}}
+	return p.projection(lines).bands
+}
