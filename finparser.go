@@ -28,6 +28,7 @@ import (
 	"github.com/gustavoz65/finparser-lib/internal/csv"
 	"github.com/gustavoz65/finparser-lib/internal/detect"
 	"github.com/gustavoz65/finparser-lib/internal/ofx"
+	"github.com/gustavoz65/finparser-lib/internal/pdf"
 	"github.com/gustavoz65/finparser-lib/internal/profile"
 	"github.com/gustavoz65/finparser-lib/internal/qif"
 	"github.com/gustavoz65/finparser-lib/internal/record"
@@ -84,6 +85,16 @@ func parseBytes(data []byte, cfg config) (*Statement, error) {
 			opt.Profile = p
 		}
 		res, err = csv.Parse(string(text), opt)
+	case FormatPDF:
+		opt := pdf.Options{
+			Password:     cfg.password,
+			RowTolerance: cfg.rowTolerance,
+			Reference:    cfg.reference,
+		}
+		if p, ok := profile.Lookup(cfg.bank); ok {
+			opt.Profile = p
+		}
+		res, err = pdf.Parse(data, opt)
 	case FormatQIF:
 		text, _ := textenc.ToUTF8(data)
 		res, err = qif.Parse(string(text))

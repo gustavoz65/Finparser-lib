@@ -1,0 +1,120 @@
+{
+  "format": "pdf",
+  "bank": "nubank",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-01T00:00:00Z",
+      "description": "Transferência recebida pelo Pix EMPRESA FICTÍCIA LTDA - 00.000.000/0001-00",
+      "amount": "3500",
+      "balance": "4500",
+      "kind": "income",
+      "id": "80d1c65e849ea4813c9d313f",
+      "raw": [
+        "",
+        "Transferência recebida pelo Pix",
+        "3.500,00",
+        "",
+        "EMPRESA FICTÍCIA LTDA - 00.000.000/0001-00",
+        ""
+      ],
+      "source": {
+        "page": 1,
+        "line": 8
+      }
+    },
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Compra no débito PADARIA SÃO JOÃO",
+      "amount": "-45.9",
+      "kind": "expense",
+      "id": "d809b320b53ee614b67eb8cb",
+      "raw": [
+        "",
+        "Compra no débito",
+        "45,90",
+        "",
+        "PADARIA SÃO JOÃO",
+        ""
+      ],
+      "source": {
+        "page": 1,
+        "line": 12
+      }
+    },
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Compra no débito PADARIA SÃO JOÃO",
+      "amount": "-45.9",
+      "balance": "4408.2",
+      "kind": "expense",
+      "id": "dd2aac075affaa199d37bfe9",
+      "raw": [
+        "",
+        "Compra no débito",
+        "45,90",
+        "",
+        "PADARIA SÃO JOÃO",
+        ""
+      ],
+      "source": {
+        "page": 1,
+        "line": 14
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "Rendimento da conta",
+      "amount": "0.87",
+      "kind": "income",
+      "id": "2695a0d6000554a98f8e3d33",
+      "raw": [
+        "",
+        "Rendimento da conta",
+        "0,87"
+      ],
+      "source": {
+        "page": 1,
+        "line": 18
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "Transferência enviada pelo Pix FULANO DE TAL - •••.000.000-•• - BANCO FICTÍCIO",
+      "amount": "-1200",
+      "balance": "3209.07",
+      "kind": "expense",
+      "id": "28adf92c81626a69c96b9089",
+      "raw": [
+        "",
+        "Transferência enviada pelo Pix",
+        "1.200,00",
+        "",
+        "FULANO DE TAL - •••.000.000-•• - BANCO FICTÍCIO",
+        ""
+      ],
+      "source": {
+        "page": 1,
+        "line": 20
+      }
+    },
+    {
+      "date": "2026-03-10T00:00:00Z",
+      "description": "Pagamento de fatura",
+      "amount": "-29.9",
+      "balance": "3179.17",
+      "kind": "expense",
+      "id": "bf4d424e73f52bae236c5d84",
+      "raw": [
+        "",
+        "Pagamento de fatura",
+        "29,90"
+      ],
+      "source": {
+        "page": 2,
+        "line": 2
+      }
+    }
+  ]
+}

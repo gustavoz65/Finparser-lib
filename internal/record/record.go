@@ -3,8 +3,11 @@
 package record
 
 import (
+	"strings"
 	"time"
 
+	"github.com/gustavoz65/finparser-lib/internal/money"
+	"github.com/gustavoz65/finparser-lib/internal/textnorm"
 	"github.com/shopspring/decimal"
 )
 
@@ -57,4 +60,28 @@ type Result struct {
 // Warn acrescenta um aviso.
 func (r *Result) Warn(page, line int, raw, msg string) {
 	r.Warnings = append(r.Warnings, Warning{Page: page, Line: line, Message: msg, Raw: raw})
+}
+
+// ApplySummary aproveita o saldo de uma linha de resumo. "SALDO ANTERIOR" /
+// "SALDO INICIAL" antes da primeira transação vira saldo de abertura;
+// outros resumos ("SALDO DO DIA") completam o saldo da última transação.
+// value é o texto do valor; label, a descrição já normalizável.
+func ApplySummary(r *Result, label, value string) {
+	if value == "" {
+		return
+	}
+	v, err := money.Parse(value)
+	if err != nil {
+		return
+	}
+	k := textnorm.Key(label)
+	n := len(r.Records)
+	switch {
+	case strings.HasPrefix(k, "saldo anterior") || strings.HasPrefix(k, "saldo inicial"):
+		if n == 0 && r.OpeningBalance == nil {
+			r.OpeningBalance = &v
+		}
+	case n > 0 && r.Records[n-1].Balance == nil:
+		r.Records[n-1].Balance = &v
+	}
 }

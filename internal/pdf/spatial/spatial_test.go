@@ -1,6 +1,7 @@
 package spatial
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gustavoz65/finparser-lib/internal/pdf/extract"
@@ -137,7 +138,7 @@ func TestRemoveNoise(t *testing.T) {
 		toks = append(toks, glyphs(p, 50, 30, "Página "+string(rune('0'+p))+" de 2")...)
 	}
 	lines := Build(toks, 0)
-	keep := func(l Line) bool { return l.Text() == "Data Valor" }
+	keep := func(l Line) bool { return l.Text() == "Data Valor" || strings.Contains(l.Text(), ",") }
 	got := texts(RemoveNoise(lines, keep))
 	want := []string{
 		"Data Valor", "01/03 x 1,00", "01/03 y 2,00", "01/03 z 3,00", "01/03 w 4,00",

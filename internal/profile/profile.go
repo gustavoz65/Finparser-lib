@@ -47,7 +47,7 @@ var banks = []bank{
 		name: "nubank", code: "260",
 		markers: []string{"nu pagamentos", "nubank", "data valor identificador descricao"},
 		hints: Hints{Skip: []*regexp.Regexp{
-			regexp.MustCompile(`^(saldo inicial|saldo final do periodo)\b`),
+			regexp.MustCompile(`^saldo final do periodo\b`),
 			regexp.MustCompile(`^(tem alguma duvida|caso a solucao|ouvidoria|extrato gerado)`),
 		}},
 	},

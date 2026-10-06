@@ -178,7 +178,7 @@ func Parse(text string, opt Options) (*record.Result, error) {
 		raw := strings.Join(rw.cells, " | ")
 		desc := cell(rw, header.Description)
 		if header.IsSummary(desc) {
-			summaryBalance(res, cell(rw, header.Balance))
+			record.ApplySummary(res, desc, cell(rw, header.Balance))
 			continue
 		}
 		if matchAny(skip, desc) || matchAny(skip, raw) {
@@ -230,26 +230,6 @@ func Parse(text string, opt Options) (*record.Result, error) {
 		res.Records = append(res.Records, rec)
 	}
 	return res, nil
-}
-
-// summaryBalance aproveita o saldo de uma linha de resumo: antes da primeira
-// transação vira saldo anterior; depois, completa o saldo da última
-// transação ("SALDO DO DIA").
-func summaryBalance(res *record.Result, cell string) {
-	if cell == "" {
-		return
-	}
-	v, err := money.Parse(cell)
-	if err != nil {
-		return
-	}
-	if n := len(res.Records); n == 0 {
-		if res.OpeningBalance == nil {
-			res.OpeningBalance = &v
-		}
-	} else if res.Records[n-1].Balance == nil {
-		res.Records[n-1].Balance = &v
-	}
 }
 
 // amount lê o valor da linha: coluna única ou crédito − débito.

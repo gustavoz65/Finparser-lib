@@ -153,12 +153,24 @@ func Gutters(lines []Line, minGap float64) []Band {
 	return bands
 }
 
+// noiseKey compara linhas ignorando dígitos: "1 de 2" e "2 de 2" são o
+// mesmo rodapé.
+func noiseKey(l Line) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsDigit(r) {
+			return '#'
+		}
+		return r
+	}, textnorm.Key(l.Text()))
+}
+
 var pageNumber = regexp.MustCompile(`(^|\s)(pag|pagina|page|folha)\.?\s*\d+|^\d+\s*(de|/|of)\s*\d+$`)
 
 // RemoveNoise descarta cabeçalho e rodapé de página (passo 3): linhas que se
-// repetem idênticas entre as 3 primeiras ou 3 últimas de várias páginas
-// ("Página 2 de 5", nome do banco, CPF mascarado). keep protege linhas que
-// devem ficar mesmo repetidas (ex.: cabeçalho da tabela).
+// repetem (ignorando dígitos) entre as 3 primeiras ou 3 últimas de várias
+// páginas ("Página 2 de 5", nome do banco, CPF mascarado). keep protege
+// linhas que devem ficar mesmo repetidas (cabeçalho da tabela, linhas com
+// valor monetário).
 func RemoveNoise(lines []Line, keep func(Line) bool) []Line {
 	byPage := map[int][]int{}
 	var pages []int
@@ -177,7 +189,7 @@ func RemoveNoise(lines []Line, keep func(Line) bool) []Line {
 		for k, i := range idx {
 			if k < 3 || k >= len(idx)-3 {
 				edge[i] = true
-				key := textnorm.Key(lines[i].Text())
+				key := noiseKey(lines[i])
 				if count[key] == nil {
 					count[key] = map[int]bool{}
 				}
@@ -188,8 +200,7 @@ func RemoveNoise(lines []Line, keep func(Line) bool) []Line {
 
 	out := lines[:0:0]
 	for i, l := range lines {
-		key := textnorm.Key(l.Text())
-		noise := edge[i] && (pageNumber.MatchString(key) || len(pages) > 1 && len(count[key]) > 1)
+		noise := edge[i] && (pageNumber.MatchString(textnorm.Key(l.Text())) || len(pages) > 1 && len(count[noiseKey(l)]) > 1)
 		if noise && (keep == nil || !keep(l)) {
 			continue
 		}

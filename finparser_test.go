@@ -5,16 +5,49 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gustavoz65/finparser-lib/internal/testgen"
 )
 
 var update = flag.Bool("update", false, "regrava os golden files em testdata/golden")
 
 var ref = time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if *update {
+		if err := writeSyntheticPDFs(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
+	os.Exit(m.Run())
+}
+
+// writeSyntheticPDFs regrava os PDFs de testdata/synthetic a partir dos
+// layouts de internal/testgen.
+func writeSyntheticPDFs() error {
+	docs := map[string]testgen.Doc{
+		"nubank_conta.pdf": testgen.NubankConta(),
+		"itau_conta.pdf":   testgen.ItauConta(),
+	}
+	for name, d := range docs {
+		b, err := testgen.PDF(d)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join("testdata", "synthetic", name), b, 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // golden compara st com testdata/golden/<name>.json.
 func golden(t *testing.T, name string, st *Statement) {
@@ -132,5 +165,36 @@ func TestWithBank(t *testing.T) {
 	st := parseFile(t, "cartao.ofx", WithBank("Inter"))
 	if st.Bank != "inter" {
 		t.Errorf("Bank = %q", st.Bank)
+	}
+}
+
+func TestPDFErrors(t *testing.T) {
+	scanned, err := testgen.PDF(testgen.Scanned())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Parse(bytes.NewReader(scanned)); !errors.Is(err, ErrNoTextLayer) {
+		t.Errorf("escaneado: err = %v", err)
+	}
+
+	locked := testgen.NubankConta()
+	locked.Password = "1234"
+	b, err := testgen.PDF(locked)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Parse(bytes.NewReader(b)); !errors.Is(err, ErrEncrypted) {
+		t.Errorf("protegido: err = %v", err)
+	}
+
+	full, err := os.ReadFile(filepath.Join("testdata", "synthetic", "itau_conta.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cut := range []int{0, 10, len(full) / 3, len(full) - 20} {
+		_, err := Parse(bytes.NewReader(full[:cut]))
+		if err == nil {
+			t.Errorf("truncado em %d: deveria falhar", cut)
+		}
 	}
 }
