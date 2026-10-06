@@ -1,0 +1,40 @@
+{
+  "format": "ofx",
+  "period_start": "2026-02-01T00:00:00Z",
+  "period_end": "2026-02-28T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-02-10T00:00:00Z",
+      "description": "MERCADO \u0026 CIA",
+      "amount": "-89.9",
+      "kind": "expense",
+      "id": "cc-1",
+      "raw": [
+        "TRNTYPE=DEBIT",
+        "DTPOSTED=20260210120000[-3:BRT]",
+        "TRNAMT=-89.90",
+        "FITID=cc-1",
+        "NAME=MERCADO \u0026 CIA"
+      ],
+      "source": {
+        "line": 13
+      }
+    },
+    {
+      "date": "2026-02-15T00:00:00Z",
+      "description": "ESTORNO MERCADO",
+      "amount": "89.9",
+      "kind": "income",
+      "id": "cc-2",
+      "raw": [
+        "TRNTYPE=CREDIT",
+        "DTPOSTED=20260215",
+        "TRNAMT=89.90",
+        "FITID=cc-2"
+      ],
+      "source": {
+        "line": 20
+      }
+    }
+  ]
+}

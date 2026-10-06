@@ -1,0 +1,75 @@
+{
+  "format": "ofx",
+  "bank": "nubank",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Transferência recebida - EMPRESA FICTÍCIA LTDA",
+      "amount": "3500",
+      "kind": "income",
+      "id": "abc-001",
+      "raw": [
+        "TRNTYPE=CREDIT",
+        "DTPOSTED=20260302000000[-3:BRT]",
+        "TRNAMT=3500.00",
+        "FITID=abc-001",
+        "MEMO=Transferência recebida - EMPRESA FICTÍCIA LTDA"
+      ],
+      "source": {
+        "line": 18
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Compra no débito - PADARIA SÃO JOÃO",
+      "amount": "-45.9",
+      "kind": "expense",
+      "id": "abc-002",
+      "raw": [
+        "TRNTYPE=DEBIT",
+        "DTPOSTED=20260303000000[-3:BRT]",
+        "TRNAMT=-45,90",
+        "FITID=abc-002",
+        "MEMO=Compra no débito - PADARIA SÃO JOÃO"
+      ],
+      "source": {
+        "line": 25
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "PIX ENVIADO - Fulano de Tal",
+      "amount": "-120",
+      "kind": "expense",
+      "id": "99df2dceaaa1cb6a2bdd314b",
+      "raw": [
+        "TRNTYPE=DEBIT",
+        "DTPOSTED=20260305",
+        "TRNAMT=120.00",
+        "NAME=PIX ENVIADO",
+        "MEMO=Fulano de Tal"
+      ],
+      "source": {
+        "line": 32
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "source": {
+        "line": 32
+      },
+      "message": "TRNTYPE de débito com valor positivo; sinal invertido",
+      "raw": "TRNTYPE=DEBIT; DTPOSTED=20260305; TRNAMT=120.00; NAME=PIX ENVIADO; MEMO=Fulano de Tal"
+    },
+    {
+      "source": {
+        "line": 40
+      },
+      "message": "data inválida \"2026XX05\"",
+      "raw": "TRNTYPE=DEBIT; DTPOSTED=2026XX05; TRNAMT=1.00"
+    }
+  ]
+}
