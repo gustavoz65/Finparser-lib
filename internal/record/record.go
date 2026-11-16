@@ -45,14 +45,27 @@ type Warning struct {
 	Raw     string
 }
 
+// Account identifica a conta do extrato; campos vazios quando a fonte não
+// informa.
+type Account struct {
+	BankID string // código do banco (COMPE) ou BIC
+	Branch string // agência
+	Number string // conta, cartão ou IBAN
+	Type   string // "checking", "savings", "creditcard"...
+}
+
 // Result é a saída de um parser de formato.
 type Result struct {
 	Bank        string
+	Account     Account
+	Currency    string // ISO 4217 ("BRL"); vazio se a fonte não informa
 	PeriodStart time.Time
 	PeriodEnd   time.Time
 	// OpeningBalance é o saldo antes da primeira transação ("SALDO
 	// ANTERIOR"), quando o extrato informa.
 	OpeningBalance *decimal.Decimal
+	// ClosingBalance é o saldo declarado depois da última transação.
+	ClosingBalance *decimal.Decimal
 	Records        []Record
 	Warnings       []Warning
 }
