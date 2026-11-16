@@ -77,3 +77,20 @@ func TestNoColumns(t *testing.T) {
 		t.Error("deveria falhar")
 	}
 }
+
+func TestLineEndingsAndSepDirective(t *testing.T) {
+	for name, in := range map[string]string{
+		"CR":   "Data;Descrição;Valor\r02/03/2026;A;-1,00\r03/03/2026;B;2,00\r",
+		"CRLF": "Data;Descrição;Valor\r\n02/03/2026;A;-1,00\r\n03/03/2026;B;2,00\r\n",
+		"sep=": "sep=|\nData|Descrição|Valor\n02/03/2026|A;x|-1,00\n03/03/2026|B|2,00\n",
+	} {
+		res, err := Parse(in, Options{})
+		if err != nil || len(res.Records) != 2 {
+			t.Errorf("%s: res = %+v, err = %v", name, res, err)
+			continue
+		}
+		if name == "sep=" && res.Records[0].Line != 3 {
+			t.Errorf("sep=: Line = %d, want 3", res.Records[0].Line)
+		}
+	}
+}
