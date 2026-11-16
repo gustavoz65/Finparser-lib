@@ -68,3 +68,15 @@ jobs:
       - run: go test ./internal/money -run '^$' -fuzz FuzzParseMoney -fuzztime 30s
       - run: go test ./internal/date -run '^$' -fuzz FuzzParseDate -fuzztime 30s
       - run: go test ./internal/ofx -run '^$' -fuzz FuzzTokenize -fuzztime 30s
+      - run: go test ./internal/mt940 -run '^$' -fuzz FuzzParse -fuzztime 30s
+      - run: go test . -run '^$' -fuzz FuzzParse -fuzztime 60s
+
+  bench:
+    name: benchmarks (só verifica que rodam)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go test ./... -run '^$' -bench . -benchtime 1x
