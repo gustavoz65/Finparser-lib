@@ -45,10 +45,14 @@ func Parse(rows []Row, opt Options) (*record.Result, error) {
 	headerAt := -1
 	var m header.Mapping
 	var descCols []int
+	idColumn := false // a coluna de documento é um identificador único
 	for i, rw := range rows {
 		if hm, ok := header.FromHeader(rw.Cells); ok {
 			headerAt, m = i, hm
 			descCols = header.DescriptionColumns(rw.Cells)
+			if c, ok := hm[header.Document]; ok {
+				idColumn = header.IsID(rw.Cells[c])
+			}
 			break
 		}
 	}
@@ -160,9 +164,9 @@ func Parse(rows []Row, opt Options) (*record.Result, error) {
 			Raw:         rw.Cells,
 			Line:        rw.Line,
 		}
-		if id := cell(rw, header.Document); len(id) >= 16 {
-			// Identificador longo (UUID do Nubank) é estável; número de
-			// documento curto se repete entre extratos e não serve de ID.
+		if id := cell(rw, header.Document); id != "" && (idColumn || len(id) >= 16) {
+			// Coluna "ID" ou identificador longo (UUID) é estável; número
+			// de documento curto se repete entre extratos e não serve.
 			rec.ID = id
 		}
 		if b := cell(rw, header.Balance); b != "" {
@@ -253,7 +257,7 @@ func signColumn(rows []Row, col int) bool {
 		if col >= len(rw.Cells) || rw.Cells[col] == "" {
 			continue
 		}
-		if header.SignOf(rw.Cells[col]) == 0 {
+		if !header.IsSignCell(rw.Cells[col]) {
 			return false
 		}
 		n++

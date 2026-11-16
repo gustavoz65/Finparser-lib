@@ -56,7 +56,7 @@ func buildDictionary() map[string]Role {
 	add(Debit, "debito", "debitos", "saidas", "saida", "debit", "valor debito")
 	add(Balance, "saldo", "saldos", "balance", "saldo apos lancamento", "saldo do dia", "saldo final")
 	add(Sign, "tipo", "d c", "c d", "dc", "deb cred", "debito credito", "natureza", "tipo lancamento",
-		"tipo de lancamento", "tipo transacao", "tipo de transacao", "tipo movimento", "sinal", "type")
+		"tipo de lancamento", "tipo transacao", "tipo de transacao", "tipo movimento", "sinal", "type", "kind")
 	add(Document, "documento", "doc", "nr doc", "n doc", "no doc", "numero do documento", "identificador", "id")
 	return d
 }
@@ -112,12 +112,28 @@ func Match(cell string) Role {
 // reconhecer.
 func SignOf(cell string) int {
 	switch textnorm.Key(cell) {
-	case "d", "db", "dr", "deb", "debito", "saida", "despesa", "-", "debit":
+	case "d", "db", "dr", "deb", "debito", "saida", "despesa", "-", "debit", "expense":
 		return -1
-	case "c", "cr", "cred", "credito", "entrada", "receita", "+", "credit":
+	case "c", "cr", "cred", "credito", "entrada", "receita", "+", "credit", "income":
 		return 1
 	}
 	return 0
+}
+
+// IsSignCell informa se a célula é de uma coluna de sinal: débito, crédito
+// ou "unknown" (sinal declaradamente desconhecido).
+func IsSignCell(cell string) bool {
+	return SignOf(cell) != 0 || textnorm.Key(cell) == "unknown"
+}
+
+// IsID informa se o cabeçalho é de identificador único da transação ("ID",
+// "Identificador"), e não de número de documento, que se repete.
+func IsID(cell string) bool {
+	switch clean(cell) {
+	case "id", "identificador", "fitid", "uuid":
+		return true
+	}
+	return false
 }
 
 // DescriptionColumns devolve todas as colunas de descrição do cabeçalho, em
