@@ -53,7 +53,7 @@ func TestUnsignedColumn(t *testing.T) {
 
 func TestYearFromReference(t *testing.T) {
 	in := "Data;Descrição;Valor\n01/03;Compra;-10,00\n02/03;Café;-5,00\n"
-	res, err := Parse(in, Options{Reference: time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)})
+	res, err := Parse(in, Options{Reference: time.Date(2027, 6, 1, 0, 0, 0, 0, time.UTC)})
 	if err != nil {
 		t.Fatal(err)
 	}
