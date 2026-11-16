@@ -8,7 +8,7 @@ func TestKey(t *testing.T) {
 		"  Data Lançamento ": "data lancamento",
 		"SALDO   DO DIA":     "saldo do dia",
 		"Histórico\t":        "historico",
-		"PIX\u00a0 ENVIADO":   "pix enviado",
+		"PIX\u00a0 ENVIADO":  "pix enviado",
 		"São João":           "sao joao",
 		"":                   "",
 	}
@@ -16,6 +16,18 @@ func TestKey(t *testing.T) {
 		if got := Key(in); got != want {
 			t.Errorf("Key(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestFoldMatchesSlow(t *testing.T) {
+	for r := rune(0xA0); r <= 0xFF; r++ {
+		in := "x" + string(r) + "y"
+		if got, want := Fold(in), foldSlow(in); got != want {
+			t.Errorf("Fold(%q) = %q, lento = %q", in, got, want)
+		}
+	}
+	if got := Fold("e\u0301 ł"); got != "e ł" {
+		t.Errorf("Fold com marca combinante = %q", got)
 	}
 }
 
