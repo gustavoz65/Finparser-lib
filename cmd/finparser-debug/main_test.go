@@ -20,6 +20,8 @@ func TestCommands(t *testing.T) {
 		{[]string{"lines", pdfFile}, "PAG BOLETO ENERGIA ELETRICA"},
 		{[]string{"parse", pdfFile}, `"bank": "itau"`},
 		{[]string{"svg", "-out", dir, pdfFile}, "itau_conta-p2.svg"},
+		{[]string{"grid", pdfFile}, "← projeção"},
+		{[]string{"grid", "-scale", "10", pdfFile}, "página 2:"},
 	}
 	for _, tt := range tests {
 		var out bytes.Buffer
