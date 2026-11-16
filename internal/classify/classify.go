@@ -7,6 +7,7 @@ package classify
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/gustavoz65/finparser-lib/internal/record"
@@ -71,79 +72,253 @@ func byPattern(r *record.Record) {
 	}
 }
 
-// checkBalance usa saldo[i] − saldo[i−1] == valor[i] para confirmar ou
-// descobrir o sinal. Detecta se o extrato está em ordem crescente ou
-// decrescente de data pela direção que explica mais linhas.
-func checkBalance(recs []record.Record, opening *decimal.Decimal) []record.Warning {
-	type pair struct{ prev, cur int } // cur é a linha cujo valor explica a diferença
-	var asc, desc []pair
-	// O saldo anterior entra como uma linha virtual de índice −1 (ordem
-	// crescente) ou len(recs) (ordem decrescente).
-	balanceAt := func(i int) *decimal.Decimal {
-		if i < 0 || i >= len(recs) {
-			return opening
-		}
-		return recs[i].Balance
-	}
-	last := -1
+// segment é um trecho entre dois saldos conhecidos: a soma dos valores de
+// items tem de dar diff.
+type segment struct {
+	items []int
+	diff  decimal.Decimal
+	at    int // lançamento que carrega o saldo, para pendurar avisos
+}
+
+// segments monta os trechos na ordem crescente de data (o saldo de uma
+// linha é o saldo depois dela e das anteriores) ou decrescente (extrato com
+// o lançamento mais novo primeiro). O saldo anterior entra como âncora
+// antes da primeira linha (crescente) ou depois da última (decrescente).
+func segments(recs []record.Record, opening *decimal.Decimal, descending bool) []segment {
+	var anchors []int
 	for i := range recs {
-		if recs[i].Balance == nil {
-			continue
-		}
-		if last >= 0 {
-			asc = append(asc, pair{last, i})
-			desc = append(desc, pair{i, last})
-		}
-		last = i
-	}
-	if opening != nil && len(recs) > 0 {
-		if recs[0].Balance != nil {
-			asc = append([]pair{{-1, 0}}, asc...)
-		}
-		if n := len(recs); recs[n-1].Balance != nil {
-			desc = append(desc, pair{n, n - 1})
+		if recs[i].Balance != nil {
+			anchors = append(anchors, i)
 		}
 	}
-	if len(asc) == 0 && len(desc) == 0 {
+	if len(anchors) == 0 {
 		return nil
 	}
-
-	matches := func(ps []pair) int {
-		n := 0
-		for _, p := range ps {
-			diff := recs[p.cur].Balance.Sub(*balanceAt(p.prev))
-			if diff.Abs().Equal(recs[p.cur].Amount.Abs()) {
-				n++
-			}
+	span := func(from, to int) []int {
+		out := make([]int, 0, to-from)
+		for i := from; i < to; i++ {
+			out = append(out, i)
 		}
-		return n
+		return out
 	}
-	pairs := asc
-	if matches(desc) > matches(asc) {
-		pairs = desc
+	var segs []segment
+	if !descending {
+		if opening != nil {
+			a := anchors[0]
+			segs = append(segs, segment{span(0, a+1), recs[a].Balance.Sub(*opening), a})
+		}
+		for k := 1; k < len(anchors); k++ {
+			p, c := anchors[k-1], anchors[k]
+			segs = append(segs, segment{span(p+1, c+1), recs[c].Balance.Sub(*recs[p].Balance), c})
+		}
+		return segs
+	}
+	for k := 1; k < len(anchors); k++ {
+		p, c := anchors[k-1], anchors[k]
+		segs = append(segs, segment{span(p, c), recs[p].Balance.Sub(*recs[c].Balance), p})
+	}
+	if opening != nil {
+		a := anchors[len(anchors)-1]
+		segs = append(segs, segment{span(a, len(recs)), recs[a].Balance.Sub(*opening), a})
+	}
+	return segs
+}
+
+// checkBalance usa a diferença entre saldos para confirmar ou descobrir o
+// sinal dos valores. Com um lançamento entre dois saldos, a conta é direta:
+// saldo[i] − saldo[i−1] == valor[i]. Com vários (extrato que só mostra
+// "SALDO DO DIA"), procura a combinação de sinais que fecha a soma e só
+// aceita o sinal de um lançamento se ele for o mesmo em todas as
+// combinações possíveis.
+//
+// Detecta se o extrato está em ordem crescente ou decrescente de data pela
+// direção que explica mais trechos.
+func checkBalance(recs []record.Record, opening *decimal.Decimal) []record.Warning {
+	asc, desc := segments(recs, opening, false), segments(recs, opening, true)
+	segs := asc
+	if explained(recs, desc) > explained(recs, asc) {
+		segs = desc
 	}
 
 	var warns []record.Warning
-	for _, p := range pairs {
-		r := &recs[p.cur]
-		// Só pares adjacentes: com linha sem saldo no meio a soma não fecha.
-		if gap := p.cur - p.prev; gap != 1 && gap != -1 {
+	for _, sg := range segs {
+		if len(sg.items) == 1 {
+			r := &recs[sg.items[0]]
+			switch {
+			case sg.diff.Equal(r.Amount):
+				r.SignKnown = true
+			case sg.diff.Equal(r.Amount.Neg()) && !r.Amount.IsZero():
+				if r.SignKnown {
+					warns = append(warns, warn(*r, fmt.Sprintf("sinal invertido pela validação de saldo (%s → %s)", r.Amount, sg.diff)))
+				}
+				r.Amount, r.SignKnown = sg.diff, true
+			default:
+				warns = append(warns, warn(*r, fmt.Sprintf("saldo não confere: diferença %s, valor %s", sg.diff, r.Amount)))
+			}
 			continue
 		}
-		diff := r.Balance.Sub(*balanceAt(p.prev))
-		switch {
-		case diff.Equal(r.Amount):
-			r.SignKnown = true
-		case diff.Equal(r.Amount.Neg()) && !r.Amount.IsZero():
-			if r.SignKnown {
-				warns = append(warns, warn(*r, fmt.Sprintf("sinal invertido pela validação de saldo (%s → %s)", r.Amount, diff)))
+
+		signs, state := solve(recs, sg, false)
+		switch state {
+		case solved:
+			for k, i := range sg.items {
+				r := &recs[i]
+				if r.SignKnown || signs[k] == 0 {
+					continue
+				}
+				if signs[k] < 0 {
+					r.Amount = r.Amount.Abs().Neg()
+				} else {
+					r.Amount = r.Amount.Abs()
+				}
+				r.SignKnown = true
 			}
-			r.Amount, r.SignKnown = diff, true
-		default:
-			warns = append(warns, warn(*r, fmt.Sprintf("saldo não confere: diferença %s, valor %s", diff, r.Amount)))
+		case impossible:
+			warns = append(warns, warn(recs[sg.at], fmt.Sprintf("saldo não confere: diferença %s em %d lançamentos", sg.diff, len(sg.items))))
 		}
 	}
 	return warns
+}
+
+// explained conta os trechos que fecham com alguma combinação de sinais.
+func explained(recs []record.Record, segs []segment) int {
+	n := 0
+	for _, sg := range segs {
+		if _, state := solve(recs, sg, true); state == solved {
+			n++
+		}
+	}
+	return n
+}
+
+type solveState int
+
+const (
+	impossible solveState = iota // nenhuma combinação fecha a soma
+	solved
+	gaveUp // trecho grande demais ou valores fora do alcance de int64
+)
+
+const (
+	maxFree   = 24      // lançamentos sem sinal por trecho
+	maxNodes  = 1 << 20 // orçamento da busca
+	maxScale  = 6       // casas decimais
+	maxAmount = 1 << 52 // em unidades mínimas
+)
+
+// solve procura os sinais dos lançamentos de sg que fazem a soma dar
+// sg.diff. Lançamentos com sinal conhecido ficam fixos, a menos que allFree.
+// Devolve, por item, +1 ou −1 quando o sinal é o mesmo em todas as soluções
+// e 0 quando varia ou já era fixo.
+//
+// É soma de subconjuntos com sinal: busca em profundidade sobre inteiros
+// (centavos), maiores valores primeiro, cortando o ramo quando o que falta
+// é maior que a soma do que resta.
+func solve(recs []record.Record, sg segment, allFree bool) ([]int8, solveState) {
+	scale := int32(0)
+	for _, i := range sg.items {
+		scale = max(scale, -recs[i].Amount.Exponent())
+	}
+	scale = max(scale, -sg.diff.Exponent())
+	if scale > maxScale {
+		return nil, gaveUp
+	}
+	target, ok := units(sg.diff, scale)
+	if !ok {
+		return nil, gaveUp
+	}
+
+	type item struct {
+		v int64
+		k int // posição em sg.items
+	}
+	var free []item
+	for k, i := range sg.items {
+		v, ok := units(recs[i].Amount, scale)
+		if !ok {
+			return nil, gaveUp
+		}
+		switch {
+		case v == 0:
+		case recs[i].SignKnown && !allFree:
+			target -= v
+		default:
+			free = append(free, item{abs(v), k})
+		}
+	}
+	if len(free) > maxFree {
+		return nil, gaveUp
+	}
+	sort.Slice(free, func(a, b int) bool { return free[a].v > free[b].v })
+	rest := make([]int64, len(free)+1) // rest[i] = soma de free[i:]
+	for i := len(free) - 1; i >= 0; i-- {
+		rest[i] = rest[i+1] + free[i].v
+	}
+
+	var (
+		cur      = make([]int8, len(free))
+		pos, neg = make([]bool, len(free)), make([]bool, len(free))
+		found    bool
+		nodes    int
+	)
+	var walk func(i int, left int64) bool
+	walk = func(i int, left int64) bool {
+		if nodes++; nodes > maxNodes {
+			return false
+		}
+		if abs(left) > rest[i] {
+			return true
+		}
+		if i == len(free) {
+			found = true
+			for j, s := range cur {
+				if s > 0 {
+					pos[j] = true
+				} else {
+					neg[j] = true
+				}
+			}
+			return true
+		}
+		cur[i] = 1
+		if !walk(i+1, left-free[i].v) {
+			return false
+		}
+		cur[i] = -1
+		return walk(i+1, left+free[i].v)
+	}
+	if !walk(0, target) {
+		return nil, gaveUp
+	}
+	if !found {
+		return nil, impossible
+	}
+	signs := make([]int8, len(sg.items))
+	for j, it := range free {
+		switch {
+		case pos[j] && !neg[j]:
+			signs[it.k] = 1
+		case neg[j] && !pos[j]:
+			signs[it.k] = -1
+		}
+	}
+	return signs, solved
+}
+
+// units converte d para inteiro em unidades de 10^-scale.
+func units(d decimal.Decimal, scale int32) (int64, bool) {
+	s := d.Shift(scale)
+	if !s.IsInteger() || s.Abs().GreaterThan(decimal.New(maxAmount, 0)) {
+		return 0, false
+	}
+	return s.IntPart(), true
+}
+
+func abs(v int64) int64 {
+	if v < 0 {
+		return -v
+	}
+	return v
 }
 
 func warn(r record.Record, msg string) record.Warning {
