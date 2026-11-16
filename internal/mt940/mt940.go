@@ -131,7 +131,7 @@ func Parse(text string) (*record.Result, error) {
 		}
 	}
 	if statements == 0 && !seen {
-		return nil, fmt.Errorf("%w: MT940 sem campo :20: nem :61:", errs.ErrMalformed)
+		return nil, fmt.Errorf("%w: MT940 sem campo de referência nem de lançamento", errs.ErrMalformed)
 	}
 	// Vários extratos no mesmo arquivo podem ser contas diferentes; os
 	// saldos só fazem sentido quando há um.
