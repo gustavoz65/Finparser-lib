@@ -24,9 +24,11 @@ const (
 	Debit
 	Balance
 	Document
+	// Sign é a coluna que só diz se a linha é débito ou crédito ("D"/"C").
+	Sign
 )
 
-var roleNames = [...]string{"none", "date", "description", "amount", "credit", "debit", "balance", "document"}
+var roleNames = [...]string{"none", "date", "description", "amount", "credit", "debit", "balance", "document", "sign"}
 
 func (r Role) String() string {
 	if int(r) < len(roleNames) {
@@ -53,6 +55,8 @@ func buildDictionary() map[string]Role {
 	add(Credit, "credito", "creditos", "entradas", "entrada", "credit", "valor credito")
 	add(Debit, "debito", "debitos", "saidas", "saida", "debit", "valor debito")
 	add(Balance, "saldo", "saldos", "balance", "saldo apos lancamento", "saldo do dia", "saldo final")
+	add(Sign, "tipo", "d c", "c d", "dc", "deb cred", "debito credito", "natureza", "tipo lancamento",
+		"tipo de lancamento", "tipo transacao", "tipo de transacao", "tipo movimento", "sinal", "type")
 	add(Document, "documento", "doc", "nr doc", "n doc", "no doc", "numero do documento", "identificador", "id")
 	return d
 }
@@ -102,6 +106,31 @@ func Match(cell string) Role {
 		return Document
 	}
 	return None
+}
+
+// SignOf lê uma célula de coluna de sinal: −1 débito, +1 crédito, 0 se não
+// reconhecer.
+func SignOf(cell string) int {
+	switch textnorm.Key(cell) {
+	case "d", "db", "dr", "deb", "debito", "saida", "despesa", "-", "debit":
+		return -1
+	case "c", "cr", "cred", "credito", "entrada", "receita", "+", "credit":
+		return 1
+	}
+	return 0
+}
+
+// DescriptionColumns devolve todas as colunas de descrição do cabeçalho, em
+// ordem. Bancos separam "Histórico" (tipo do lançamento) de "Descrição"
+// (contraparte); as duas juntas formam a descrição.
+func DescriptionColumns(cells []string) []int {
+	var out []int
+	for i, c := range cells {
+		if Match(c) == Description {
+			out = append(out, i)
+		}
+	}
+	return out
 }
 
 // Mapping associa papel → índice da coluna.
