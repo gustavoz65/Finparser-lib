@@ -32,3 +32,13 @@ func TestEmpty(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+func TestSkipsNonTransactionLists(t *testing.T) {
+	res, err := Parse("!Type:Cat\nNAlimentacao\nE\n^\n!Account\nNConta\n^\n!Type:Bank\nD02/03/2026\nT-10,00\nPPadaria\n^\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Records) != 1 || len(res.Warnings) != 0 {
+		t.Errorf("Records = %+v, Warnings = %+v", res.Records, res.Warnings)
+	}
+}

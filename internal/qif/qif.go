@@ -13,6 +13,18 @@ import (
 	"github.com/gustavoz65/finparser-lib/internal/textnorm"
 )
 
+func transactional(header string) bool {
+	h := strings.ToLower(strings.TrimSpace(header))
+	if !strings.HasPrefix(h, "!type:") {
+		return false
+	}
+	switch strings.TrimSpace(h[len("!type:"):]) {
+	case "cat", "class", "memorized", "security", "prices", "budget", "invitem", "template":
+		return false
+	}
+	return true
+}
+
 // Parse lê um QIF já em UTF-8. Datas são interpretadas como dia/mês/ano.
 func Parse(text string) (*record.Result, error) {
 	res := &record.Result{}
@@ -62,7 +74,9 @@ func Parse(text string) (*record.Result, error) {
 			continue
 		}
 		if strings.HasPrefix(ln, "!") {
-			inType = strings.HasPrefix(strings.ToLower(ln), "!type:")
+			// Só listas de transação: !Type:Cat, !Type:Class e
+			// !Type:Memorized não são lançamentos.
+			inType = transactional(ln)
 			continue
 		}
 		if !inType {
