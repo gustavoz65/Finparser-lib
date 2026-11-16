@@ -146,13 +146,19 @@ finparser/
 │   ├── pdf/
 │   │   ├── extract/           # backend padrão (ledongthuc) → []Token
 │   │   ├── extract_pdfium/    # backend cgo, build tag finparser_pdfium
+│   │   ├── matrix/            # tensor de ocupação em bits: projeção, calhas, vales
 │   │   └── spatial/           # tokens → linhas → colunas → tabela  (o "3D")
+│   ├── table/                 # motor tabular: CSV, XLSX e HTML passam por ele
+│   ├── xlsx/ htmltable/       # planilha e tabela HTML → linhas
+│   ├── camt/ mt940/           # ISO 20022 e SWIFT
+│   ├── enrich/                # meio de pagamento e contraparte
 │   ├── header/                # descobre qual coluna é data/descrição/valor/saldo
 │   ├── classify/              # receita x despesa
 │   └── profile/               # dicas por banco (nubank, itau, inter, bb...)
 │
 ├── cmd/
-│   └── finparser-debug/       # CLI: despeja tokens e gera SVG com as caixas
+│   ├── finparser/             # CLI: mostra, confere saldo, junta e converte
+│   └── finparser-debug/       # CLI: despeja tokens, matriz e SVG com as caixas
 │
 └── testdata/
     ├── synthetic/             # gerados por código, commitados
@@ -348,6 +354,8 @@ type Token struct {
 
 Valores monetários costumam ser **alinhados à direita** — para tokens numéricos use `X1` (borda direita) como referência, não `X0`.
 
+**Como o passo 4 é calculado: a matriz de ocupação.** O espaço Página × Linha × X é um tensor de bits num único `[]uint64` (`internal/pdf/matrix`): uma linha da matriz por linha visual, uma coluna por ponto do eixo X, páginas como fatias de linhas. Preencher uma palavra são duas máscaras e um OR; a projeção no eixo X é uma soma vertical com contadores bit-sliced (64 colunas por operação). As calhas da estratégia 2 são as faixas de zeros da projeção. Na estratégia 1, a faixa do cabeçalho sozinha é estreita demais — a descrição passa do fim de "Lançamento" e um valor alto começa antes de "Valor (R$)" —, então a fronteira entre dois cabeçalhos vizinhos fica no **vale** da projeção das linhas do corpo entre eles. `finparser-debug grid` desenha a matriz.
+
 **Passo 5 — linhas → transações.**
 - Linha com data e valor → transação nova.
 - Linha **sem data nem valor**, logo abaixo de uma transação → continuação da descrição (descrição quebrada em duas linhas). Junte com espaço.
@@ -406,6 +414,7 @@ v1, nesta ordem:
 1. `Amount > 0` → `Income`; `Amount < 0` → `Expense`.
 2. Fonte não informa sinal (coluna de valor sem D/C nem `-`, sem colunas separadas) → padrões na descrição: "PIX RECEBIDO", "TED RECEBIDA", "TRANSFERENCIA RECEBIDA", "SALARIO", "RENDIMENTO" → `Income`; "PIX ENVIADO", "COMPRA", "PAGAMENTO", "TARIFA", "SAQUE" → `Expense`.
 3. Validação cruzada com saldo, quando existir: `saldo[i] − saldo[i−1] == valor[i]` confirma o sinal; se der `-valor`, inverte e emite `Warning`. Essa checagem é a melhor rede de segurança do parser de PDF inteiro.
+   Com vários lançamentos entre dois saldos (extrato que só mostra "SALDO DO DIA"), é soma de subconjuntos com sinal: busca a combinação que fecha a diferença e só define o sinal de um lançamento se ele for igual em todas as soluções. A busca tem orçamento por extrato.
 4. Nada bateu → `Unknown`. Nunca chute.
 
 ### 7.11 profile (perfis de banco)
