@@ -3,6 +3,7 @@ package classify
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gustavoz65/finparser-lib/internal/record"
 	"github.com/shopspring/decimal"
@@ -198,6 +199,24 @@ func TestBalanceGapTooLarge(t *testing.T) {
 	// Precisão absurda também não entra na busca.
 	weird := []record.Record{{Amount: dec("0.00000000001")}, {Amount: dec("1"), Balance: bal("1")}}
 	Classify(weird, bal("0"))
+}
+
+// Milhares de trechos sem solução: o orçamento é do extrato inteiro, então
+// o custo não cresce com o número de trechos.
+func TestBalanceGapBudget(t *testing.T) {
+	recs := make([]record.Record, 24*2000)
+	for i := range recs {
+		recs[i] = record.Record{Amount: dec("2")}
+		if i%24 == 23 {
+			recs[i].Balance = bal("1") // diferença 0 com 24 valores pares fecha; com saldo fixo, não
+		}
+	}
+	recs[23].Balance = bal("0.5")
+	start := time.Now()
+	Classify(recs, bal("1"))
+	if d := time.Since(start); d > 3*time.Second {
+		t.Errorf("Classify levou %v", d)
+	}
 }
 
 func BenchmarkBalanceGap(b *testing.B) {

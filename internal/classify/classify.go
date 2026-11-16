@@ -135,8 +135,11 @@ func segments(recs []record.Record, opening *decimal.Decimal, descending bool) [
 // direção que explica mais trechos.
 func checkBalance(recs []record.Record, opening *decimal.Decimal) []record.Warning {
 	asc, desc := segments(recs, opening, false), segments(recs, opening, true)
+	// Um orçamento só para o extrato inteiro: muitos trechos difíceis não
+	// podem somar segundos de busca.
+	budget := maxNodes
 	segs := asc
-	if explained(recs, desc) > explained(recs, asc) {
+	if explained(recs, desc, &budget) > explained(recs, asc, &budget) {
 		segs = desc
 	}
 
@@ -158,7 +161,7 @@ func checkBalance(recs []record.Record, opening *decimal.Decimal) []record.Warni
 			continue
 		}
 
-		signs, state := solve(recs, sg, false)
+		signs, state := solve(recs, sg, false, &budget)
 		switch state {
 		case solved:
 			for k, i := range sg.items {
@@ -181,10 +184,10 @@ func checkBalance(recs []record.Record, opening *decimal.Decimal) []record.Warni
 }
 
 // explained conta os trechos que fecham com alguma combinação de sinais.
-func explained(recs []record.Record, segs []segment) int {
+func explained(recs []record.Record, segs []segment, budget *int) int {
 	n := 0
 	for _, sg := range segs {
-		if _, state := solve(recs, sg, true); state == solved {
+		if _, state := solve(recs, sg, true, budget); state == solved {
 			n++
 		}
 	}
@@ -201,7 +204,7 @@ const (
 
 const (
 	maxFree   = 24      // lançamentos sem sinal por trecho
-	maxNodes  = 1 << 20 // orçamento da busca
+	maxNodes  = 1 << 22 // orçamento da busca, por extrato
 	maxScale  = 6       // casas decimais
 	maxAmount = 1 << 52 // em unidades mínimas
 )
@@ -213,8 +216,9 @@ const (
 //
 // É soma de subconjuntos com sinal: busca em profundidade sobre inteiros
 // (centavos), maiores valores primeiro, cortando o ramo quando o que falta
-// é maior que a soma do que resta.
-func solve(recs []record.Record, sg segment, allFree bool) ([]int8, solveState) {
+// é maior que a soma do que resta. budget é o número de nós que ainda pode
+// visitar; quando acaba, desiste sem mexer em nada.
+func solve(recs []record.Record, sg segment, allFree bool, budget *int) ([]int8, solveState) {
 	scale := int32(0)
 	for _, i := range sg.items {
 		scale = max(scale, -recs[i].Amount.Exponent())
@@ -259,11 +263,10 @@ func solve(recs []record.Record, sg segment, allFree bool) ([]int8, solveState) 
 		cur      = make([]int8, len(free))
 		pos, neg = make([]bool, len(free)), make([]bool, len(free))
 		found    bool
-		nodes    int
 	)
 	var walk func(i int, left int64) bool
 	walk = func(i int, left int64) bool {
-		if nodes++; nodes > maxNodes {
+		if *budget--; *budget < 0 {
 			return false
 		}
 		if abs(left) > rest[i] {
