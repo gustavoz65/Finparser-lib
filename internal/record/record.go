@@ -77,7 +77,8 @@ func (r *Result) Warn(page, line int, raw, msg string) {
 
 // ApplySummary aproveita o saldo de uma linha de resumo. "SALDO ANTERIOR" /
 // "SALDO INICIAL" antes da primeira transação vira saldo de abertura;
-// outros resumos ("SALDO DO DIA") completam o saldo da última transação.
+// outros resumos ("SALDO DO DIA") completam o saldo da última transação;
+// "SALDO FINAL" / "SALDO ATUAL" também viram saldo de fechamento.
 // value é o texto do valor; label, a descrição já normalizável.
 func ApplySummary(r *Result, label, value string) {
 	if value == "" {
@@ -87,8 +88,15 @@ func ApplySummary(r *Result, label, value string) {
 	if err != nil {
 		return
 	}
-	k := textnorm.Key(label)
+	k := strings.ReplaceAll(textnorm.Key(label), "s a l d o", "saldo")
+	// "TOTAL DE ENTRADAS 350,00" é resumo, mas não é saldo.
+	if !strings.HasPrefix(k, "saldo") {
+		return
+	}
 	n := len(r.Records)
+	if strings.HasPrefix(k, "saldo final") || strings.HasPrefix(k, "saldo atual") {
+		r.ClosingBalance = &v
+	}
 	switch {
 	case strings.HasPrefix(k, "saldo anterior") || strings.HasPrefix(k, "saldo inicial"):
 		if n == 0 && r.OpeningBalance == nil {
