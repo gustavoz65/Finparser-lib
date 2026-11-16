@@ -28,6 +28,14 @@ func TestParseValue(t *testing.T) {
 		{"1.234.567,89", "1234567.89", false},
 		{"12", "12", false},
 		{",50", "0.5", false},
+		{"\u221245,90", "-45.9", true},
+		{"\u2013 45,90", "-45.9", true},
+		{"100,00 CR", "100", true},
+		{"100,00 DB", "-100", true},
+		{"100,00 d", "-100", true},
+		{"US$ 10,00", "10", false},
+		{"BRL 1.234,56", "1234.56", false},
+		{"0.500", "0.5", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
@@ -46,7 +54,7 @@ func TestParseValue(t *testing.T) {
 }
 
 func TestParseInvalid(t *testing.T) {
-	for _, in := range []string{"", "R$", "abc", "1.23.4", "1.234.56", "12/03", "-", "()", "1,2,3,4", "1..2", "D"} {
+	for _, in := range []string{"", "R$", "abc", "1.23.4", "1.234.56", "12/03", "-", "()", "1,2,3,4", "1..2", "D", "CR", "R$ R$", "10,00 X", "DB10,00"} {
 		if _, err := Parse(in); err == nil {
 			t.Errorf("Parse(%q) deveria falhar", in)
 		}

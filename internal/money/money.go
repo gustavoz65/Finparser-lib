@@ -31,61 +31,10 @@ func Parse(s string) (decimal.Decimal, error) {
 // ParseValue converte s em decimal e informa se havia sinal explícito.
 //
 // Formatos aceitos: "R$ 1.234,56", "-R$ 45,00", "R$ -45,00", "1.234,56 D",
-// "1.234,56 C", "1.234,56-", "(1.234,56)", "+ 100,00", "1234.56", "0,01".
+// "1.234,56 C", "100,00 CR", "100,00 DB", "1.234,56-", "(1.234,56)",
+// "+ 100,00", "−45,90" (menos tipográfico), "1234.56", "0,01".
 func ParseValue(s string) (Value, error) {
-	s = compact(s)
-	if s == "" {
-		return Value{}, ErrInvalid
-	}
-
-	neg, signed := false, false
-
-	if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
-		s = s[1 : len(s)-1]
-		neg, signed = true, true
-	}
-
-	// Sufixo D/C (débito/crédito).
-	if n := len(s); n > 1 {
-		switch s[n-1] {
-		case 'D', 'd':
-			if isDigit(s[n-2]) {
-				s = s[:n-1]
-				neg, signed = !neg, true
-			}
-		case 'C', 'c':
-			if isDigit(s[n-2]) {
-				s = s[:n-1]
-				signed = true
-			}
-		}
-	}
-
-	// Sinais e símbolo de moeda podem aparecer em qualquer ordem no começo
-	// ("-R$45,00", "R$-45,00") e o sinal também pode vir no fim ("45,00-").
-	for {
-		switch {
-		case strings.HasPrefix(s, "R$"), strings.HasPrefix(s, "r$"):
-			s = s[2:]
-		case strings.HasPrefix(s, "-"):
-			s = s[1:]
-			neg, signed = !neg, true
-		case strings.HasPrefix(s, "+"):
-			s = s[1:]
-			signed = true
-		case strings.HasSuffix(s, "-"):
-			s = s[:len(s)-1]
-			neg, signed = !neg, true
-		case strings.HasSuffix(s, "+"):
-			s = s[:len(s)-1]
-			signed = true
-		default:
-			goto body
-		}
-	}
-
-body:
-	num, err := normalize(s)
+	num, neg, signed, err := scan(s)
 	if err != nil {
 		return Value{}, err
 	}
@@ -99,33 +48,91 @@ body:
 	return Value{Amount: d, Signed: signed}, nil
 }
 
-// LooksLike informa, sem alocar decimal, se s tem forma de valor monetário
+// currencies são prefixos de moeda ignorados, já em minúsculas.
+var currencies = []string{"r$", "us$", "brl", "usd", "eur", "$", "€"}
+
+// suffixes são marcadores de débito/crédito no fim do valor.
+var suffixes = []struct {
+	text string
+	neg  bool
+}{{"db", true}, {"dr", true}, {"cr", false}, {"d", true}, {"c", false}}
+
+// scan valida s e devolve o número no formato de decimal.NewFromString,
+// o sinal e se ele era explícito. Não cria decimal.
+func scan(s string) (num string, neg, signed bool, err error) {
+	s = compact(s)
+	if s == "" {
+		return "", false, false, ErrInvalid
+	}
+
+	if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
+		s = s[1 : len(s)-1]
+		neg, signed = true, true
+	}
+
+	// Sufixo D/C, DB/CR (débito/crédito), sempre depois de um dígito.
+	for _, suf := range suffixes {
+		n := len(s) - len(suf.text)
+		if n > 0 && isDigit(s[n-1]) && strings.EqualFold(s[n:], suf.text) {
+			s = s[:n]
+			neg, signed = neg != suf.neg, true
+			break
+		}
+	}
+
+	// Sinais e símbolo de moeda podem aparecer em qualquer ordem no começo
+	// ("-R$45,00", "R$-45,00") e o sinal também pode vir no fim ("45,00-").
+strip:
+	for {
+		for _, c := range currencies {
+			if len(s) >= len(c) && strings.EqualFold(s[:len(c)], c) {
+				s = s[len(c):]
+				continue strip
+			}
+		}
+		switch {
+		case strings.HasPrefix(s, "-"):
+			s = s[1:]
+			neg, signed = !neg, true
+		case strings.HasPrefix(s, "+"):
+			s = s[1:]
+			signed = true
+		case strings.HasSuffix(s, "-"):
+			s = s[:len(s)-1]
+			neg, signed = !neg, true
+		case strings.HasSuffix(s, "+"):
+			s = s[:len(s)-1]
+			signed = true
+		default:
+			break strip
+		}
+	}
+
+	num, err = normalize(s)
+	return num, neg, signed, err
+}
+
+// LooksLike informa, sem criar decimal, se s tem forma de valor monetário
 // com casas decimais (ex.: "45,00", "R$ 1.234,56"). Inteiros puros como
 // "2026" não contam, para não confundir com ano ou número de documento.
 func LooksLike(s string) bool {
-	c := compact(s)
-	if c == "" {
+	num, _, _, err := scan(s)
+	if err != nil {
 		return false
 	}
-	if _, err := ParseValue(s); err != nil {
-		return false
-	}
-	i := strings.LastIndexAny(c, ".,")
-	if i < 0 {
-		return false
-	}
-	digits := 0
-	for j := i + 1; j < len(c) && isDigit(c[j]); j++ {
-		digits++
-	}
-	return digits == 2
+	i := strings.IndexByte(num, '.')
+	return i >= 0 && len(num)-i-1 == 2
 }
 
-// compact remove espaços (inclusive o não-quebrável) de s.
+// compact remove espaços (inclusive o não-quebrável) de s e troca os
+// traços tipográficos usados como menos em PDF ("−", "–") por "-".
 func compact(s string) string {
 	return strings.Map(func(r rune) rune {
-		if unicode.IsSpace(r) || r == ' ' {
+		switch {
+		case unicode.IsSpace(r) || r == '\u00a0':
 			return -1
+		case r == '\u2212' || r == '\u2013' || r == '\ufe63' || r == '\uff0d':
+			return '-'
 		}
 		return r
 	}, s)
@@ -173,7 +180,8 @@ func normalize(s string) (string, error) {
 		if sep == ',' {
 			other = '.'
 		}
-		decimalSep = strings.IndexByte(intPart, other) >= 0
+		// "0.500" não é agrupamento de milhar: é decimal.
+		decimalSep = strings.IndexByte(intPart, other) >= 0 || strings.HasPrefix(intPart, "0")
 	}
 
 	if !decimalSep {
