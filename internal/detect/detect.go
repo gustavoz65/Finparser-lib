@@ -4,6 +4,7 @@ package detect
 
 import (
 	"bytes"
+	"regexp"
 	"unicode"
 	"unicode/utf8"
 
@@ -20,16 +21,41 @@ const (
 	OFX     Format = "ofx"
 	QIF     Format = "qif"
 	CSV     Format = "csv"
+	XLSX    Format = "xlsx"
+	HTML    Format = "html"
+	CAMT    Format = "camt053"
+	MT940   Format = "mt940"
+	// XLS é o Excel binário antigo (BIFF): reconhecido para dar um erro
+	// claro, mas não lido.
+	XLS Format = "xls"
 )
 
 const window = 1024
 
-// Detect aplica, nos primeiros ~1 KB, a ordem: %PDF- → PDF; OFXHEADER: ou
-// <OFX> → OFX; !Type: → QIF; texto válido → CSV; senão Unknown.
+var (
+	zipMagic = []byte("PK\x03\x04")
+	oleMagic = []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}
+	mt940Tag = regexp.MustCompile(`(?m)^:(20|25|60[FM]|61):`)
+)
+
+// Detect aplica, nos primeiros ~1 KB, a ordem: %PDF- → PDF; ZIP com
+// planilha → XLSX; OFXHEADER: ou <OFX> → OFX; !Type: → QIF; <Document> ISO
+// 20022 → CAMT; campos ":20:"/":61:" → MT940; <table>/<html> → HTML; texto
+// válido → CSV; senão Unknown.
 func Detect(b []byte) Format {
 	head := b
 	if len(head) > window {
 		head = head[:window]
+	}
+	switch {
+	case bytes.HasPrefix(b, zipMagic):
+		// Os nomes das partes ficam sem compressão dentro do ZIP.
+		if bytes.Contains(b, []byte("xl/worksheets/")) || bytes.Contains(b, []byte("xl/workbook.xml")) {
+			return XLSX
+		}
+		return Unknown
+	case bytes.HasPrefix(b, oleMagic):
+		return XLS
 	}
 	// O padrão PDF tolera lixo antes do cabeçalho dentro do primeiro KB.
 	if bytes.Contains(head, []byte("%PDF-")) {
@@ -45,6 +71,13 @@ func Detect(b []byte) Format {
 		return OFX
 	case bytes.HasPrefix(upper, []byte("!TYPE:")):
 		return QIF
+	case bytes.Contains(upper, []byte("<DOCUMENT")) && (bytes.Contains(upper, []byte("CAMT.0")) || bytes.Contains(upper, []byte("<BKTOCSTMR"))),
+		bytes.Contains(upper, []byte("<BKTOCSTMR")):
+		return CAMT
+	case bytes.HasPrefix(trimmed, []byte("{1:")) && bytes.Contains(head, []byte("{4:")), mt940Tag.Match(trimmed) && bytes.HasPrefix(trimmed, []byte(":")):
+		return MT940
+	case bytes.Contains(upper, []byte("<TABLE")), bytes.Contains(upper, []byte("<HTML")), bytes.HasPrefix(upper, []byte("<!DOCTYPE HTML")):
+		return HTML
 	case len(trimmed) > 0 && isText(text):
 		return CSV
 	}
