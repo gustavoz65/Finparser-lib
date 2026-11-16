@@ -50,6 +50,25 @@ func tokenize(s string) []token {
 			continue
 		}
 
+		// <MEMO><![CDATA[texto]]></MEMO>: o conteúdo é o valor da tag aberta.
+		if strings.HasPrefix(s[i:], "<![CDATA[") {
+			c := strings.Index(s[i:], "]]>")
+			if c < 0 {
+				break
+			}
+			if v := strings.TrimSpace(s[i+9 : i+c]); v != "" && len(toks) > 0 {
+				switch last := &toks[len(toks)-1]; last.kind {
+				case tokOpen:
+					last.kind, last.value = tokLeaf, v
+				case tokLeaf:
+					last.value += v
+				}
+			}
+			line += strings.Count(s[i:i+c], "\n")
+			i = skipTo(s, i+c+3, &line)
+			continue
+		}
+
 		end := strings.IndexByte(s[i:], '>')
 		if end < 0 {
 			break

@@ -128,8 +128,29 @@ func Parse(text string) (*record.Result, error) {
 
 	found := false
 	for _, st := range stmts {
-		if acct := st.child("BANKACCTFROM"); acct != nil && res.Bank == "" {
-			res.Bank = profile.ByCode(acct.get("BANKID"))
+		acct := st.child("BANKACCTFROM")
+		if acct == nil {
+			acct = st.child("CCACCTFROM")
+		}
+		if acct != nil {
+			if res.Bank == "" {
+				res.Bank = profile.ByCode(acct.get("BANKID"))
+			}
+			if res.Account.Number == "" {
+				res.Account = record.Account{
+					BankID: acct.get("BANKID"), Branch: acct.get("BRANCHID"),
+					Number: acct.get("ACCTID"), Type: accountType(st.name, acct.get("ACCTTYPE")),
+				}
+			}
+		}
+		if res.Currency == "" {
+			res.Currency = strings.ToUpper(st.get("CURDEF"))
+		}
+		// Com várias contas no arquivo o saldo final não é um só.
+		if bal := st.child("LEDGERBAL"); bal != nil && len(stmts) == 1 {
+			if v, err := money.Parse(bal.get("BALAMT")); err == nil {
+				res.ClosingBalance = &v
+			}
 		}
 		lists := st.find("BANKTRANLIST")
 		if len(lists) == 0 {
@@ -158,9 +179,24 @@ func Parse(text string) (*record.Result, error) {
 	return res, nil
 }
 
+// debitTypes são os TRNTYPE que só podem ser saída. ATM e POS ficam de
+// fora: pela especificação o sinal do valor é quem decide.
 var debitTypes = map[string]bool{
 	"DEBIT": true, "PAYMENT": true, "FEE": true, "SRVCHG": true,
-	"ATM": true, "POS": true, "CHECK": true, "CASH": true,
+	"CHECK": true, "CASH": true,
+}
+
+func accountType(stmt, acctType string) string {
+	if stmt == "CCSTMTRS" {
+		return "creditcard"
+	}
+	switch strings.ToUpper(acctType) {
+	case "CHECKING":
+		return "checking"
+	case "SAVINGS":
+		return "savings"
+	}
+	return strings.ToLower(acctType)
 }
 
 func parseTrn(n *node, res *record.Result) (record.Record, bool) {

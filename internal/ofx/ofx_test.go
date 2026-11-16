@@ -53,6 +53,9 @@ func TestParseSGML(t *testing.T) {
 			t.Errorf("Records[%d] = %+v", i, r)
 		}
 	}
+	if res.Account.BankID != "0260" || res.Account.Number != "12345-6" || res.Account.Type != "checking" || res.Currency != "BRL" {
+		t.Errorf("Account = %+v, Currency = %q", res.Account, res.Currency)
+	}
 	// DEBIT positivo invertido + data inválida.
 	if len(res.Warnings) != 2 {
 		t.Fatalf("Warnings = %+v", res.Warnings)
@@ -122,4 +125,31 @@ func FuzzTokenize(f *testing.F) {
 		build(tokenize(s))
 		_, _ = Parse(s)
 	})
+}
+
+func TestCDATAAndSignByType(t *testing.T) {
+	s := `<OFX><CCSTMTRS><CURDEF>brl</CURDEF><CCACCTFROM><ACCTID>4111</ACCTID></CCACCTFROM><BANKTRANLIST>
+<STMTTRN><TRNTYPE>POS</TRNTYPE><DTPOSTED>20260301</DTPOSTED><TRNAMT>10.00</TRNAMT><FITID>1</FITID><MEMO><![CDATA[Estorno <loja> & cia]]></MEMO></STMTTRN>
+<STMTTRN><TRNTYPE>FEE</TRNTYPE><DTPOSTED>20260302</DTPOSTED><TRNAMT>5.00</TRNAMT><FITID>2</FITID><MEMO>Anuidade</MEMO></STMTTRN>
+</BANKTRANLIST><LEDGERBAL><BALAMT>-123.45</BALAMT><DTASOF>20260331</DTASOF></LEDGERBAL></CCSTMTRS></OFX>`
+	res, err := Parse(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Records) != 2 {
+		t.Fatalf("Records = %+v", res.Records)
+	}
+	// POS segue o sinal do valor; FEE positivo é invertido.
+	if r := res.Records[0]; r.Description != "Estorno <loja> & cia" || r.Amount.String() != "10" {
+		t.Errorf("Records[0] = %+v", r)
+	}
+	if r := res.Records[1]; r.Amount.String() != "-5" {
+		t.Errorf("Records[1] = %+v", r)
+	}
+	if res.Currency != "BRL" || res.Account.Number != "4111" || res.Account.Type != "creditcard" {
+		t.Errorf("Currency = %q, Account = %+v", res.Currency, res.Account)
+	}
+	if res.ClosingBalance == nil || res.ClosingBalance.String() != "-123.45" {
+		t.Errorf("ClosingBalance = %v", res.ClosingBalance)
+	}
 }
