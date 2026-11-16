@@ -2,6 +2,7 @@ package ofx
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gustavoz65/finparser-lib/internal/date"
@@ -10,6 +11,7 @@ import (
 	"github.com/gustavoz65/finparser-lib/internal/profile"
 	"github.com/gustavoz65/finparser-lib/internal/record"
 	"github.com/gustavoz65/finparser-lib/internal/textnorm"
+	"github.com/shopspring/decimal"
 )
 
 type node struct {
@@ -148,7 +150,7 @@ func Parse(text string) (*record.Result, error) {
 		}
 		// Com várias contas no arquivo o saldo final não é um só.
 		if bal := st.child("LEDGERBAL"); bal != nil && len(stmts) == 1 {
-			if v, err := money.Parse(bal.get("BALAMT")); err == nil {
+			if v, err := amount(bal.get("BALAMT")); err == nil {
 				res.ClosingBalance = &v
 			}
 		}
@@ -217,7 +219,7 @@ func parseTrn(n *node, res *record.Result) (record.Record, bool) {
 		res.Warn(0, n.line, rawLine, fmt.Sprintf("data inválida %q", dt))
 		return record.Record{}, false
 	}
-	amt, err := money.Parse(n.get("TRNAMT"))
+	amt, err := amount(n.get("TRNAMT"))
 	if err != nil {
 		res.Warn(0, n.line, rawLine, fmt.Sprintf("valor inválido %q", n.get("TRNAMT")))
 		return record.Record{}, false
@@ -243,6 +245,21 @@ func parseTrn(n *node, res *record.Result) (record.Record, bool) {
 		Raw:         raw,
 		Line:        n.line,
 	}, true
+}
+
+// plainRe é o número como a especificação OFX manda: ponto decimal, sem
+// separador de milhar.
+var plainRe = regexp.MustCompile(`^[+-]?\d+(\.\d+)?$`)
+
+// amount lê um valor OFX. No formato da especificação "12.345" é doze
+// vírgula trezentos e quarenta e cinco; só o que foge dela ("-45,00",
+// "1.234,56") passa pelo parser tolerante.
+func amount(s string) (decimal.Decimal, error) {
+	s = strings.TrimSpace(s)
+	if plainRe.MatchString(s) {
+		return decimal.NewFromString(s)
+	}
+	return money.Parse(s)
 }
 
 // description combina NAME e MEMO sem repetir texto.
