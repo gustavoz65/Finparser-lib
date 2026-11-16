@@ -73,7 +73,8 @@ func Words(toks []extract.Token) []Word {
 		for end < len(toks) && toks[end].Page == first.Page && math.Abs(toks[end].Y-first.Y) < tol {
 			end++
 		}
-		row := append([]extract.Token(nil), toks[start:end]...)
+		// toks já é uma cópia (splitSpaces): ordena o trecho no lugar.
+		row := toks[start:end]
 		sort.SliceStable(row, func(i, j int) bool { return row[i].X < row[j].X })
 		words = append(words, mergeRow(row)...)
 		start = end
@@ -125,8 +126,13 @@ func mergeRow(row []extract.Token) []Word {
 func splitSpaces(toks []extract.Token) []extract.Token {
 	out := make([]extract.Token, 0, len(toks))
 	for _, t := range toks {
+		// Caminho rápido: o backend costuma entregar um glifo por token.
+		if len(t.Text) <= 1 || strings.IndexFunc(t.Text, isSpace) < 0 {
+			out = append(out, t)
+			continue
+		}
 		runes := []rune(t.Text)
-		if len(runes) <= 1 || strings.IndexFunc(t.Text, isSpace) < 0 {
+		if len(runes) <= 1 {
 			out = append(out, t)
 			continue
 		}
