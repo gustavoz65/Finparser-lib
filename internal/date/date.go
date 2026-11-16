@@ -32,13 +32,20 @@ func (c Civil) Time() time.Time {
 // Resolve completa o ano de uma data sem ano usando o fim do período do
 // extrato. Se o mês da transação for maior que o mês final do período, ela
 // pertence ao ano anterior (extrato de dezembro a janeiro). Sem período
-// (periodEnd zero), usa o ano de ref e devolve guessed = true.
+// (periodEnd zero), usa o ano de ref — ou o anterior, se a data cairia no
+// futuro — e devolve guessed = true.
 func (c Civil) Resolve(periodEnd, ref time.Time) (t time.Time, guessed bool) {
 	if c.HasYear {
 		return c.Time(), false
 	}
 	if periodEnd.IsZero() {
-		return time.Date(ref.Year(), c.Month, c.Day, 0, 0, 0, 0, time.UTC), true
+		// Extrato não traz lançamento futuro: "28/12" lido em janeiro é do
+		// ano anterior. Uma semana de folga cobre lançamentos agendados.
+		t = time.Date(ref.Year(), c.Month, c.Day, 0, 0, 0, 0, time.UTC)
+		if t.After(ref.AddDate(0, 0, 7)) {
+			t = time.Date(ref.Year()-1, c.Month, c.Day, 0, 0, 0, 0, time.UTC)
+		}
+		return t, true
 	}
 	y := periodEnd.Year()
 	if c.Month > periodEnd.Month() {
@@ -122,6 +129,10 @@ func Parse(s string) (Civil, error) {
 		return Civil{}, ErrInvalid
 	}
 	if len(parts) == 2 {
+		// "10.12" é valor (dez reais e doze), não 10 de dezembro.
+		if _, named := months[parts[1]]; !named && strings.Contains(s, parts[0]+"."+parts[1]) {
+			return Civil{}, ErrInvalid
+		}
 		return build(0, m, d, false)
 	}
 	y, ok := atoi(parts[2])

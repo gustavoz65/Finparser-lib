@@ -7,7 +7,7 @@ import (
 	"github.com/gustavoz65/finparser-lib/internal/textnorm"
 )
 
-const datePat = `(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2}(?: de)? [a-z]{3,9}\.?(?: de)? \d{4})`
+const datePat = `(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2}[-.]\d{1,2}[-.]\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}(?: de)? [a-z]{3,9}\.?(?: de)? \d{4})`
 
 var periodRe = regexp.MustCompile(datePat + `\s*(?:a|ate|-|ao|à)\s*` + datePat)
 

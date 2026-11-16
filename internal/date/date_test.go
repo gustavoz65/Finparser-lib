@@ -42,7 +42,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestParseInvalid(t *testing.T) {
-	for _, in := range []string{"", "32/01/2026", "31/02/2026", "29/02/2025", "02/13", "PIX", "1234,56", "02 XYZ", "1/2/3/4", "02/01/123", "10:30"} {
+	for _, in := range []string{"", "32/01/2026", "31/02/2026", "29/02/2025", "02/13", "PIX", "1234,56", "02 XYZ", "1/2/3/4", "02/01/123", "10:30", "10.12", "1.5"} {
 		if _, err := Parse(in); err == nil {
 			t.Errorf("Parse(%q) deveria falhar", in)
 		}
@@ -83,6 +83,16 @@ func TestResolve(t *testing.T) {
 	got, guessed = Civil{Month: time.March, Day: 2}.Resolve(time.Time{}, ref)
 	if !guessed || got.Year() != 2030 {
 		t.Errorf("sem período: %v %v", got, guessed)
+	}
+	// Sem período e data no futuro: ano anterior (extrato dez→jan lido em janeiro).
+	jan15 := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
+	got, guessed = Civil{Month: time.December, Day: 28}.Resolve(time.Time{}, jan15)
+	if !guessed || !got.Equal(time.Date(2025, 12, 28, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("futuro: %v %v", got, guessed)
+	}
+	got, _ = Civil{Month: time.January, Day: 18}.Resolve(time.Time{}, jan15)
+	if got.Year() != 2026 {
+		t.Errorf("agendado: %v", got)
 	}
 	// Com ano: nada a resolver.
 	got, guessed = Civil{Year: 2024, Month: time.March, Day: 2, HasYear: true}.Resolve(jan, ref)
