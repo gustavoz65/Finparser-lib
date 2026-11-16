@@ -189,7 +189,7 @@ func (p *parser) run(lines []spatial.Line) {
 	}
 
 	page, n := 0, 0
-	for _, l := range lines {
+	for i, l := range lines {
 		if l.Page != page {
 			page, n = l.Page, 0
 		}
@@ -198,7 +198,10 @@ func (p *parser) run(lines []spatial.Line) {
 
 		if hl, ok := headerOf(l); ok {
 			// Cabeçalho (repetido ou não) redefine as colunas a partir daqui;
-			// páginas que não o repetem herdam o anterior.
+			// páginas que não o repetem herdam o anterior. As fronteiras
+			// saem da projeção das linhas da tabela, não da largura do
+			// texto do cabeçalho.
+			hl.bands = spatial.Boundaries(hl.bands, tableBody(lines[i+1:]))
 			lay = hl
 			p.open = false
 			continue
@@ -218,6 +221,21 @@ func (p *parser) run(lines []spatial.Line) {
 			p.lineBased(l)
 		}
 	}
+}
+
+// tableBody devolve as linhas de lançamento (com data ou valor) até o
+// próximo cabeçalho.
+func tableBody(lines []spatial.Line) []spatial.Line {
+	var out []spatial.Line
+	for _, l := range lines {
+		if _, ok := headerOf(l); ok {
+			break
+		}
+		if hasMoney(l) || leadingDate(l) {
+			out = append(out, l)
+		}
+	}
+	return out
 }
 
 func lastMoney(l spatial.Line) string {
@@ -288,7 +306,6 @@ func (p *parser) row(l spatial.Line, lay layout) {
 	creditText, debitText := get(header.Credit), get(header.Debit)
 	balanceText := get(header.Balance)
 
-	// Data pode ter "sobrado" para a descrição quando a coluna é estreita.
 	c, err := date.Parse(dateText)
 	hasDate := err == nil
 
@@ -302,9 +319,13 @@ func (p *parser) lineBased(l spatial.Line) {
 	c, n := dateAt(ws)
 	ws = ws[n:]
 	var moneys []string
-	for len(ws) > 0 && money.LooksLike(ws[len(ws)-1].Text) {
-		moneys = append([]string{ws[len(ws)-1].Text}, moneys...)
-		ws = ws[:len(ws)-1]
+	for {
+		text, used := trailingMoney(ws)
+		if used == 0 {
+			break
+		}
+		moneys = append([]string{text}, moneys...)
+		ws = ws[:len(ws)-used]
 	}
 	parts := make([]string, len(ws))
 	for i, w := range ws {
@@ -319,6 +340,41 @@ func (p *parser) lineBased(l spatial.Line) {
 		amountText, balanceText = moneys[len(moneys)-2], moneys[len(moneys)-1]
 	}
 	p.handle(l, c, n > 0, strings.Join(parts, " "), amountText, "", "", balanceText, []string{l.Text()})
+}
+
+// trailingMoney lê um valor no fim de ws e diz quantas palavras ele ocupa.
+// O valor pode vir partido: "R$ 45,90", "- 45,90", "45,90 D".
+func trailingMoney(ws []spatial.Word) (string, int) {
+	n := len(ws)
+	if n == 0 {
+		return "", 0
+	}
+	text, used := ws[n-1].Text, 1
+	if !money.LooksLike(text) {
+		// Marcador de débito/crédito solto depois do valor.
+		if n < 2 || header.SignOf(text) == 0 || !money.LooksLike(ws[n-2].Text+" "+text) {
+			return "", 0
+		}
+		text, used = ws[n-2].Text+" "+text, 2
+	}
+	// Sinal ou moeda soltos antes do valor.
+	for used < n && used < 4 {
+		prev := ws[n-used-1].Text
+		if !isMoneyPrefix(prev) || !money.LooksLike(prev+" "+text) {
+			break
+		}
+		text = prev + " " + text
+		used++
+	}
+	return text, used
+}
+
+func isMoneyPrefix(s string) bool {
+	switch strings.ToUpper(s) {
+	case "-", "+", "\u2212", "\u2013", "R$", "US$", "$", "BRL":
+		return true
+	}
+	return false
 }
 
 func (p *parser) handle(l spatial.Line, c date.Civil, hasDate bool, desc, amountText, creditText, debitText, balanceText string, raw []string) {
@@ -339,8 +395,9 @@ func (p *parser) handle(l spatial.Line, c date.Civil, hasDate bool, desc, amount
 		return
 	}
 
-	// Grupo com sinal implícito.
-	if k := textnorm.Key(desc); sectionRe.MatchString(k) {
+	// Grupo com sinal implícito. Sem o "total de", só vale se a linha não
+	// traz valor: "Débitos diversos 10,00" é lançamento.
+	if k := textnorm.Key(desc); isSection(k, amountText+creditText+debitText) {
 		switch {
 		case strings.Contains(k, "entrada"), strings.Contains(k, "credito"):
 			p.sectionSign = 1
@@ -399,10 +456,11 @@ func (p *parser) handle(l spatial.Line, c date.Civil, hasDate bool, desc, amount
 		}
 		p.res.Records = append(p.res.Records, rec)
 		p.open, p.openY, p.openPage = true, l.Y, l.Page
-	case !hasDate && p.open && desc != "" && l.Page == p.openPage && p.openY-l.Y <= 2.5*l.FontSize && !hasMoney(l):
-		// Descrição quebrada em duas linhas.
+	case !hasDate && p.open && l.Page == p.openPage && p.openY-l.Y <= 2.5*l.FontSize && !hasMoney(l):
+		// Descrição quebrada em duas linhas. Vale o texto inteiro: a
+		// continuação pode passar da largura da coluna de descrição.
 		r := &p.res.Records[len(p.res.Records)-1]
-		r.Description = textnorm.Spaces(r.Description + " " + desc)
+		r.Description = textnorm.Spaces(r.Description + " " + text)
 		r.Raw = append(r.Raw, raw...)
 		p.openY = l.Y
 	case hasDate && hasDigit(amountText+creditText+debitText):
@@ -415,6 +473,11 @@ func (p *parser) handle(l spatial.Line, c date.Civil, hasDate bool, desc, amount
 			p.open = false
 		}
 	}
+}
+
+func isSection(key, amounts string) bool {
+	m := sectionRe.FindStringSubmatch(key)
+	return m != nil && (m[1] != "" || amounts == "")
 }
 
 func (p *parser) summaryBalance(label, text string) {
@@ -465,9 +528,9 @@ func hasDigit(s string) bool {
 // dadas: as do primeiro cabeçalho, ou as do perfil de projeção. Usado pela
 // CLI de debug para desenhar as fronteiras.
 func Columns(lines []spatial.Line) []spatial.Band {
-	for _, l := range lines {
+	for i, l := range lines {
 		if lay, ok := headerOf(l); ok {
-			return lay.bands
+			return spatial.Boundaries(lay.bands, tableBody(lines[i+1:]))
 		}
 	}
 	p := &parser{res: &record.Result{}}
