@@ -31,3 +31,78 @@ func ExampleParse() {
 	// 02/03/2026 Salário 3500.00 income
 	// 03/03/2026 Padaria -45.90 expense
 }
+
+// Reconcile prova, pelos saldos do próprio extrato, que nada faltou.
+func ExampleStatement_Reconcile() {
+	csv := `Data;Histórico;Valor;Saldo
+01/03/2026;SALDO ANTERIOR;;1.000,00
+02/03/2026;PIX RECEBIDO DE FULANO DE TAL;250,00;1.250,00
+03/03/2026;COMPRA NO DEBITO - PADARIA;-45,90;1.204,10
+`
+	st, err := finparser.Parse(strings.NewReader(csv))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	rec := st.Reconcile()
+	fmt.Println(rec.Status, rec.Covered, "de", rec.Total)
+	for _, t := range st.Transactions {
+		fmt.Printf("%s %s %q\n", t.Kind, t.Method, t.Counterparty)
+	}
+	// Output:
+	// verified 2 de 2
+	// income pix "FULANO DE TAL"
+	// expense card "PADARIA"
+}
+
+// Sem sinal no valor, a lib descobre pelo saldo o que entrou e o que saiu.
+func ExampleParse_signFromBalance() {
+	csv := `Data;Histórico;Valor;Saldo
+01/03/2026;SALDO ANTERIOR;;1.000,00
+02/03/2026;LOJA A;50,00;
+02/03/2026;FULANO;200,00;
+02/03/2026;SALDO DO DIA;;1.150,00
+`
+	st, err := finparser.Parse(strings.NewReader(csv))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, t := range st.Transactions {
+		fmt.Println(t.Description, t.Amount, t.Kind)
+	}
+	// Output:
+	// LOJA A -50 expense
+	// FULANO 200 income
+}
+
+// Qualquer formato de entrada vira OFX.
+func ExampleStatement_WriteOFX() {
+	st, err := finparser.Parse(strings.NewReader("Data;Descrição;Valor\n02/03/2026;Mercado;-10,50\n"))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var out strings.Builder
+	if err := st.WriteOFX(&out); err != nil {
+		fmt.Println(err)
+		return
+	}
+	i := strings.Index(out.String(), "<STMTTRN>")
+	j := strings.Index(out.String(), "<FITID>")
+	fmt.Println(out.String()[i:j])
+	// Output:
+	// <STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20260302<TRNAMT>-10.50
+}
+
+func ExampleStatement_Summary() {
+	st, err := finparser.Parse(strings.NewReader("Data;Descrição;Valor\n02/03/2026;Salário;3.500,00\n03/03/2026;Aluguel;-1.200,00\n"))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	sum := st.Summary()
+	fmt.Println(sum.Income, sum.Expense, sum.Net)
+	// Output:
+	// 3500 -1200 2300
+}
