@@ -75,7 +75,8 @@ func Parse(data []byte, opt Options) (*record.Result, error) {
 		res.Bank = prof.Name()
 		skip = prof.Hints().Skip
 	}
-	if s, e, ok := date.FindPeriod(allText(lines)); ok {
+	// O período fica no cabeçalho do documento: basta a primeira página.
+	if s, e, ok := date.FindPeriod(firstPageText(lines)); ok {
 		res.PeriodStart, res.PeriodEnd = s, e
 	}
 
@@ -107,9 +108,12 @@ func headText(lines []spatial.Line) string {
 	return sb.String()
 }
 
-func allText(lines []spatial.Line) string {
+func firstPageText(lines []spatial.Line) string {
 	var sb strings.Builder
 	for _, l := range lines {
+		if l.Page != lines[0].Page {
+			break
+		}
 		sb.WriteString(l.Text())
 		sb.WriteByte('\n')
 	}
@@ -174,11 +178,14 @@ type parser struct {
 var sectionRe = regexp.MustCompile(`^(total de )?(entradas|saidas|creditos|debitos)\b`)
 
 func (p *parser) run(lines []spatial.Line) {
+	// Lê cada linha como cabeçalho uma vez só; o resultado serve à busca do
+	// primeiro cabeçalho, ao corpo de cada tabela e ao laço principal.
+	heads := make([]*layout, len(lines))
 	hasHeader := false
-	for _, l := range lines {
-		if _, ok := headerOf(l); ok {
+	for i, l := range lines {
+		if hl, ok := headerOf(l); ok {
+			heads[i] = &hl
 			hasHeader = true
-			break
 		}
 	}
 	var lay layout
@@ -196,13 +203,16 @@ func (p *parser) run(lines []spatial.Line) {
 		n++
 		p.line = n
 
-		if hl, ok := headerOf(l); ok {
+		if hl := heads[i]; hl != nil {
 			// Cabeçalho (repetido ou não) redefine as colunas a partir daqui;
 			// páginas que não o repetem herdam o anterior. As fronteiras
 			// saem da projeção das linhas da tabela, não da largura do
 			// texto do cabeçalho.
-			hl.bands = spatial.Boundaries(hl.bands, tableBody(lines[i+1:]))
-			lay = hl
+			end := i + 1
+			for end < len(lines) && heads[end] == nil {
+				end++
+			}
+			lay = layout{bands: spatial.Boundaries(hl.bands, tableBody(lines[i+1:end])), m: hl.m}
 			p.open = false
 			continue
 		}
@@ -223,14 +233,11 @@ func (p *parser) run(lines []spatial.Line) {
 	}
 }
 
-// tableBody devolve as linhas de lançamento (com data ou valor) até o
-// próximo cabeçalho.
+// tableBody devolve as linhas de lançamento (com data ou valor) de lines,
+// que é o trecho entre um cabeçalho e o próximo.
 func tableBody(lines []spatial.Line) []spatial.Line {
 	var out []spatial.Line
 	for _, l := range lines {
-		if _, ok := headerOf(l); ok {
-			break
-		}
 		if hasMoney(l) || leadingDate(l) {
 			out = append(out, l)
 		}
@@ -530,7 +537,14 @@ func hasDigit(s string) bool {
 func Columns(lines []spatial.Line) []spatial.Band {
 	for i, l := range lines {
 		if lay, ok := headerOf(l); ok {
-			return spatial.Boundaries(lay.bands, tableBody(lines[i+1:]))
+			end := i + 1
+			for end < len(lines) {
+				if _, next := headerOf(lines[end]); next {
+					break
+				}
+				end++
+			}
+			return spatial.Boundaries(lay.bands, tableBody(lines[i+1:end]))
 		}
 	}
 	p := &parser{res: &record.Result{}}
