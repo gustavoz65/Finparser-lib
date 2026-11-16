@@ -13,6 +13,17 @@ import (
 
 // Fold remove acentos ("Descrição" → "Descricao").
 func Fold(s string) string {
+	// Caminho rápido: quase todo token de extrato é ASCII puro.
+	ascii := true
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			ascii = false
+			break
+		}
+	}
+	if ascii {
+		return s
+	}
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	out, _, err := transform.String(t, s)
 	if err != nil {
