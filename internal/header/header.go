@@ -61,12 +61,13 @@ func buildDictionary() map[string]Role {
 	return d
 }
 
+var punctuation = strings.NewReplacer("(r$)", " ", "r$", " ", "(", " ", ")", " ", ":", " ", "*", " ", "/", " ", "º", " ", ".", " ")
+
 // clean normaliza um cabeçalho: sem acento, minúsculo, sem "(r$)" nem
 // pontuação nas pontas.
 func clean(s string) string {
 	k := textnorm.Key(s)
-	k = strings.NewReplacer("(r$)", " ", "r$", " ", "(", " ", ")", " ", ":", " ", "*", " ", "/", " ", "º", " ", ".", " ").Replace(k)
-	return textnorm.Spaces(k)
+	return textnorm.Spaces(punctuation.Replace(k))
 }
 
 // Match devolve o papel de uma célula de cabeçalho, ou None.
