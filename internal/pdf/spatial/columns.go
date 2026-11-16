@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/gustavoz65/finparser-lib/internal/pdf/matrix"
 	"github.com/gustavoz65/finparser-lib/internal/textnorm"
 )
 
@@ -99,66 +100,109 @@ func isNumeric(s string) bool {
 	return digits > 0
 }
 
-// maxSpan limita a largura analisada pelo perfil de projeção, em pontos.
-const maxSpan = 20000
+// Occupancy monta a matriz de ocupação das linhas: uma linha da matriz por
+// linha visual, uma coluna por ponto do eixo X. Devolve nil sem linhas ou
+// com coordenadas absurdas (PDF malicioso).
+func Occupancy(lines []Line) *matrix.Grid {
+	lo, hi := math.Inf(1), math.Inf(-1)
+	for _, l := range lines {
+		if len(l.Words) > 0 {
+			lo = math.Min(lo, l.X0())
+			hi = math.Max(hi, l.X1())
+		}
+	}
+	g := matrix.New(len(lines), lo, hi, 1)
+	if g == nil {
+		return nil
+	}
+	for r, l := range lines {
+		for _, w := range l.Words {
+			g.Fill(r, w.X0, w.X1)
+		}
+	}
+	return g
+}
 
 // Gutters encontra colunas pelo perfil de projeção (fallback do passo 4):
 // projeta as faixas [X0, X1] de todas as linhas no eixo X; as "calhas" de
 // espaço vazio que atravessam a maioria das linhas (≥ 90%) e têm pelo menos
 // minGap × fonte de largura são fronteiras entre colunas.
 func Gutters(lines []Line, minGap float64) []Band {
-	if len(lines) == 0 {
+	g := Occupancy(lines)
+	if g == nil {
 		return nil
 	}
-	lo, hi := math.Inf(1), math.Inf(-1)
-	var fonts []float64
-	for _, l := range lines {
-		lo = math.Min(lo, l.X0())
-		hi = math.Max(hi, l.X1())
-		fonts = append(fonts, l.FontSize)
+	fonts := make([]float64, len(lines))
+	for i, l := range lines {
+		fonts[i] = l.FontSize
 	}
-	// Página A4 tem ~600pt; coordenadas absurdas (PDF malicioso) não podem
-	// virar uma alocação gigante.
-	if !(hi-lo >= 0 && hi-lo <= maxSpan) {
-		return nil
-	}
-	n := int(math.Ceil(hi-lo)) + 1
-	cover := make([]int, n)
+	profile := g.Projection(0, g.Rows())
+	width := int(math.Ceil(minGap * fontOr(median(fonts))))
+	hi := g.X(0)
 	for _, l := range lines {
-		seen := make([]bool, n)
-		for _, w := range l.Words {
-			for x := int(w.X0 - lo); x <= int(math.Ceil(w.X1-lo)) && x < n; x++ {
-				if x >= 0 && !seen[x] {
-					seen[x] = true
-					cover[x]++
-				}
-			}
+		if len(l.Words) > 0 {
+			hi = math.Max(hi, l.X1())
 		}
 	}
-	limit := len(lines) / 10
-	width := minGap * fontOr(median(fonts))
 
 	var bands []Band
 	start := 0
-	for x := 0; x < n; {
-		if cover[x] > limit {
-			x++
-			continue
+	for _, run := range matrix.Gutters(profile, int32(len(lines)/10), width) {
+		if run.From > start { // calha na margem esquerda não separa nada
+			bands = append(bands, Band{X0: g.X(start), X1: g.X(run.From)})
+			start = run.To
 		}
-		g := x
-		for g < n && cover[g] <= limit {
-			g++
-		}
-		if float64(g-x) >= width && x > start {
-			bands = append(bands, Band{X0: lo + float64(start), X1: lo + float64(x)})
-			start = g
-		}
-		x = g
 	}
-	if start < n {
-		bands = append(bands, Band{X0: lo + float64(start), X1: hi})
+	if start < g.Cols() {
+		bands = append(bands, Band{X0: g.X(start), X1: hi})
 	}
 	return bands
+}
+
+// Boundaries transforma as células do cabeçalho em colunas que cobrem a
+// largura inteira da tabela (passo 4, âncora pelo cabeçalho). A fronteira
+// entre dois cabeçalhos vizinhos fica no vale da projeção das linhas do
+// corpo: o trecho menos ocupado entre o fim de um e o começo do outro.
+//
+// A célula do cabeçalho sozinha é estreita demais: a descrição passa do
+// fim de "Lançamento" e um valor alto começa antes de "Valor (R$)". O vale
+// acompanha o dado de verdade, alinhado à esquerda, à direita ou centrado.
+func Boundaries(header []Band, body []Line) []Band {
+	if len(header) == 0 {
+		return nil
+	}
+	out := make([]Band, len(header))
+	lo, hi := header[0].X0, header[len(header)-1].X1
+	for _, l := range body {
+		if len(l.Words) > 0 {
+			lo = math.Min(lo, l.X0())
+			hi = math.Max(hi, l.X1())
+		}
+	}
+
+	var profile []int32
+	g := Occupancy(body)
+	if g != nil {
+		profile = g.Projection(0, g.Rows())
+	}
+	left := lo - 1
+	for i := range header {
+		right := hi + 1
+		if i+1 < len(header) {
+			a, b := header[i].X1, header[i+1].X0
+			right = (a + b) / 2
+			if g != nil && b > a {
+				// Colunas inteiras dentro do vão entre os dois cabeçalhos.
+				from, to := g.Col(a)+1, g.Col(b)
+				if c, ok := matrix.Valley(profile, from, to); ok {
+					right = g.X(0) + c
+				}
+			}
+		}
+		out[i] = Band{X0: left, X1: right}
+		left = right
+	}
+	return out
 }
 
 // noiseKey compara linhas ignorando dígitos: "1 de 2" e "2 de 2" são o

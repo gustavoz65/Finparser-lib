@@ -168,31 +168,43 @@ func Lines(words []Word, tolerance float64) []Line {
 		return ws[i].Y > ws[j].Y
 	})
 
+	// ys entra em ordem decrescente (as palavras vêm ordenadas por Y), então
+	// a mediana é o elemento do meio; fonts fica ordenado por inserção. Sem
+	// isso a mediana custaria uma ordenação por palavra.
 	var (
 		lines []Line
 		cur   []Word
 		ys    []float64
 		fonts []float64
 	)
+	mid := func(xs []float64) float64 {
+		n := len(xs)
+		if n%2 == 1 {
+			return xs[n/2]
+		}
+		return (xs[n/2-1] + xs[n/2]) / 2
+	}
 	flush := func() {
 		if len(cur) == 0 {
 			return
 		}
 		sort.SliceStable(cur, func(i, j int) bool { return cur[i].X0 < cur[j].X0 })
-		lines = append(lines, Line{Page: cur[0].Page, Y: median(ys), FontSize: median(fonts), Words: cur})
+		lines = append(lines, Line{Page: cur[0].Page, Y: mid(ys), FontSize: mid(fonts), Words: cur})
 		cur, ys, fonts = nil, nil, nil
 	}
 	for _, w := range ws {
 		if len(cur) > 0 {
-			my := median(ys)
-			lineFont := median(fonts)
-			if w.Page != cur[0].Page || math.Abs(w.Y-my) > tolerance*math.Min(fontOr(w.FontSize), lineFont) {
+			if w.Page != cur[0].Page || math.Abs(w.Y-mid(ys)) > tolerance*math.Min(fontOr(w.FontSize), mid(fonts)) {
 				flush()
 			}
 		}
 		cur = append(cur, w)
 		ys = append(ys, w.Y)
-		fonts = append(fonts, fontOr(w.FontSize))
+		f := fontOr(w.FontSize)
+		i := sort.SearchFloat64s(fonts, f)
+		fonts = append(fonts, 0)
+		copy(fonts[i+1:], fonts[i:])
+		fonts[i] = f
 	}
 	flush()
 	return lines
