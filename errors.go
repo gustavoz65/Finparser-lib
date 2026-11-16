@@ -2,6 +2,7 @@ package finparser
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gustavoz65/finparser-lib/internal/errs"
 )
@@ -9,7 +10,7 @@ import (
 // Erros sentinela. Todo erro devolvido por Parse envolve um deles; use
 // errors.Is para testar.
 var (
-	// ErrUnknownFormat: os bytes não são PDF, OFX, QIF nem texto.
+	// ErrUnknownFormat: os bytes não são de nenhum formato suportado.
 	ErrUnknownFormat = errs.ErrUnknownFormat
 	// ErrNoTextLayer: PDF sem texto extraível (provavelmente escaneado).
 	ErrNoTextLayer = errs.ErrNoTextLayer
@@ -32,15 +33,17 @@ type ParseError struct {
 }
 
 func (e *ParseError) Error() string {
+	// Os sentinelas já começam com "finparser: "; não repete o prefixo.
+	msg := strings.TrimPrefix(e.Err.Error(), "finparser: ")
 	switch {
 	case e.Page > 0 && e.Line > 0:
-		return fmt.Sprintf("finparser: %s página %d linha %d: %v", e.Format, e.Page, e.Line, e.Err)
+		return fmt.Sprintf("finparser: %s página %d linha %d: %v", e.Format, e.Page, e.Line, msg)
 	case e.Page > 0:
-		return fmt.Sprintf("finparser: %s página %d: %v", e.Format, e.Page, e.Err)
+		return fmt.Sprintf("finparser: %s página %d: %v", e.Format, e.Page, msg)
 	case e.Line > 0:
-		return fmt.Sprintf("finparser: %s linha %d: %v", e.Format, e.Line, e.Err)
+		return fmt.Sprintf("finparser: %s linha %d: %v", e.Format, e.Line, msg)
 	case e.Format != "":
-		return fmt.Sprintf("finparser: %s: %v", e.Format, e.Err)
+		return fmt.Sprintf("finparser: %s: %v", e.Format, msg)
 	}
 	return e.Err.Error()
 }

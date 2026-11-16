@@ -1,0 +1,62 @@
+{
+  "format": "camt053",
+  "bank": "Banco Fictício S.A.",
+  "account": {
+    "bank_id": "FICTBRSP",
+    "number": "BR0000000000000000000000000C1"
+  },
+  "currency": "BRL",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "1000",
+  "closing_balance": "4424.2",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Empresa Fictícia Ltda - Salário março/2026",
+      "amount": "3500",
+      "kind": "income",
+      "id": "FICT-2026-000001",
+      "raw": [
+        "Amt=3500.00",
+        "CdtDbtInd=CRDT",
+        "BookgDt=2026-03-02"
+      ],
+      "source": {
+        "line": 1
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Padaria São João - Compra no débito",
+      "amount": "-45.9",
+      "kind": "expense",
+      "method": "card",
+      "id": "FICT-2026-000002",
+      "raw": [
+        "Amt=45.90",
+        "CdtDbtInd=DBIT",
+        "BookgDt=2026-03-03T10:30:00-03:00"
+      ],
+      "source": {
+        "line": 2
+      }
+    },
+    {
+      "date": "2026-03-10T00:00:00Z",
+      "description": "Tarifa pacote de serviços",
+      "amount": "-29.9",
+      "kind": "expense",
+      "method": "fee",
+      "id": "FICT-2026-000003",
+      "raw": [
+        "Amt=29.90",
+        "CdtDbtInd=DBIT",
+        "BookgDt=2026-03-10"
+      ],
+      "source": {
+        "line": 3
+      }
+    }
+  ]
+}

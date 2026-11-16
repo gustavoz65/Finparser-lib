@@ -1,0 +1,67 @@
+{
+  "format": "html",
+  "bank": "santander",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "3000",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "PIX RECEBIDO FULANO DE TAL",
+      "amount": "450",
+      "balance": "3450",
+      "kind": "income",
+      "method": "pix",
+      "counterparty": "FULANO DE TAL",
+      "id": "e4b3708150862f44ca2b0839",
+      "raw": [
+        "02/03/2026",
+        "PIX RECEBIDO FULANO DE TAL",
+        "000001",
+        "450,00",
+        "3.450,00"
+      ],
+      "source": {
+        "line": 12
+      }
+    },
+    {
+      "date": "2026-03-04T00:00:00Z",
+      "description": "COMPRA CARTAO DEB MC FARMACIA FICTICIA",
+      "amount": "-78.45",
+      "balance": "3371.55",
+      "kind": "expense",
+      "method": "card",
+      "id": "822e61ad19039797a85931b1",
+      "raw": [
+        "04/03/2026",
+        "COMPRA CARTAO DEB MC FARMACIA FICTICIA",
+        "000002",
+        "-78,45",
+        "3.371,55"
+      ],
+      "source": {
+        "line": 13
+      }
+    },
+    {
+      "date": "2026-03-06T00:00:00Z",
+      "description": "TARIFA MENSALIDADE PACOTE SERVICOS",
+      "amount": "-35",
+      "balance": "3336.55",
+      "kind": "expense",
+      "method": "fee",
+      "id": "48c06c47be8d2594ebb53809",
+      "raw": [
+        "06/03/2026",
+        "TARIFA MENSALIDADE PACOTE SERVICOS",
+        "000003",
+        "-35,00",
+        "3.336,55"
+      ],
+      "source": {
+        "line": 14
+      }
+    }
+  ]
+}

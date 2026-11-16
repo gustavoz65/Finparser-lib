@@ -1,0 +1,142 @@
+{
+  "format": "pdf",
+  "bank": "bradesco",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "2500",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "TRANSF PIX REM: EMPRESA FICTICIA COMERCIO LTDA",
+      "amount": "1250000",
+      "balance": "1252500",
+      "kind": "income",
+      "method": "pix",
+      "counterparty": "EMPRESA FICTICIA COMERCIO LTDA",
+      "id": "16b955b9e21e4fb2153aa9ab",
+      "raw": [
+        "02/03/26",
+        "TRANSF PIX REM: EMPRESA FICTICIA COMERCIO LTDA",
+        "0001234",
+        "1.250.000,00",
+        "",
+        "1.252.500,00"
+      ],
+      "source": {
+        "page": 1,
+        "line": 6
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "PAGTO ELETRON COBRANCA CONDOMINIO EDIFICIO FICTICIO BLOCO B APTO 000",
+      "amount": "-389.9",
+      "kind": "expense",
+      "id": "5688f79bdf23565858ee573d",
+      "raw": [
+        "03/03/26",
+        "PAGTO ELETRON COBRANCA",
+        "0001235",
+        "",
+        "389,90",
+        "",
+        "",
+        "CONDOMINIO EDIFICIO FICTICIO BLOCO B APTO 000",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "source": {
+        "page": 1,
+        "line": 7
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "TARIFA BANCARIA CESTA",
+      "amount": "-32.5",
+      "balance": "1252077.6",
+      "kind": "expense",
+      "method": "fee",
+      "id": "fc96f27cb425f639f3eaeb7a",
+      "raw": [
+        "03/03/26",
+        "TARIFA BANCARIA CESTA",
+        "0001236",
+        "",
+        "32,50",
+        "1.252.077,60"
+      ],
+      "source": {
+        "page": 1,
+        "line": 9
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "PIX QR CODE DINAMICO DES: POSTO FICTICIO",
+      "amount": "-250",
+      "balance": "1251827.6",
+      "kind": "expense",
+      "method": "pix",
+      "counterparty": "POSTO FICTICIO",
+      "id": "80cc7fbd1d2f87106d754b71",
+      "raw": [
+        "05/03/26",
+        "PIX QR CODE DINAMICO DES: POSTO FICTICIO",
+        "0001237",
+        "",
+        "250,00",
+        "1.251.827,60"
+      ],
+      "source": {
+        "page": 1,
+        "line": 10
+      }
+    },
+    {
+      "date": "2026-03-06T00:00:00Z",
+      "description": "RESGATE INVEST FACIL",
+      "amount": "100",
+      "balance": "1251927.6",
+      "kind": "income",
+      "method": "investment",
+      "id": "31b90887f8bd64ff785aa872",
+      "raw": [
+        "06/03/26",
+        "RESGATE INVEST FACIL",
+        "0001238",
+        "100,00",
+        "",
+        "1.251.927,60"
+      ],
+      "source": {
+        "page": 2,
+        "line": 1
+      }
+    },
+    {
+      "date": "2026-03-09T00:00:00Z",
+      "description": "TED DIF.TITUL.CC H.BANK DEST. FULANO DE TAL",
+      "amount": "-1000000",
+      "balance": "251927.6",
+      "kind": "expense",
+      "method": "ted",
+      "counterparty": "FULANO DE TAL",
+      "id": "97e5cb80776f52c98f4d8ef3",
+      "raw": [
+        "09/03/26",
+        "TED DIF.TITUL.CC H.BANK DEST. FULANO DE TAL",
+        "0001239",
+        "",
+        "1.000.000,00",
+        "251.927,60"
+      ],
+      "source": {
+        "page": 2,
+        "line": 2
+      }
+    }
+  ]
+}

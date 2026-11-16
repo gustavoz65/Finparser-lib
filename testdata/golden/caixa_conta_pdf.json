@@ -1,0 +1,108 @@
+{
+  "format": "pdf",
+  "bank": "caixa",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "800",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "CRED PIX CHAVE",
+      "amount": "1200",
+      "balance": "2000",
+      "kind": "income",
+      "method": "pix",
+      "id": "121feda2431e42aa5d452b68",
+      "raw": [
+        "02/03/2026",
+        "000001",
+        "CRED PIX CHAVE",
+        "1.200,00 C",
+        "2.000,00 C"
+      ],
+      "source": {
+        "page": 1,
+        "line": 4
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "SAQUE ATM",
+      "amount": "-300",
+      "balance": "1700",
+      "kind": "expense",
+      "method": "withdrawal",
+      "id": "2c0c122932aacc155d97e687",
+      "raw": [
+        "03/03/2026",
+        "000002",
+        "SAQUE ATM",
+        "300,00 D",
+        "1.700,00 C"
+      ],
+      "source": {
+        "page": 1,
+        "line": 5
+      }
+    },
+    {
+      "date": "2026-03-04T00:00:00Z",
+      "description": "PAG AGUA",
+      "amount": "-2000",
+      "balance": "-300",
+      "kind": "expense",
+      "id": "0d1309eff58cfa756c101e4e",
+      "raw": [
+        "04/03/2026",
+        "000003",
+        "PAG AGUA",
+        "2.000,00 D",
+        "300,00 D"
+      ],
+      "source": {
+        "page": 1,
+        "line": 6
+      }
+    },
+    {
+      "date": "2026-03-05T00:00:00Z",
+      "description": "DEB JUROS",
+      "amount": "-12.34",
+      "balance": "-312.34",
+      "kind": "expense",
+      "method": "interest",
+      "id": "399c583b27348cc425b2e350",
+      "raw": [
+        "05/03/2026",
+        "000004",
+        "DEB JUROS",
+        "12,34 D",
+        "312,34 D"
+      ],
+      "source": {
+        "page": 1,
+        "line": 7
+      }
+    },
+    {
+      "date": "2026-03-06T00:00:00Z",
+      "description": "CRED TED",
+      "amount": "500",
+      "balance": "187.66",
+      "kind": "income",
+      "method": "ted",
+      "id": "336818c53949d559f4be2302",
+      "raw": [
+        "06/03/2026",
+        "000005",
+        "CRED TED",
+        "500,00 C",
+        "187,66 C"
+      ],
+      "source": {
+        "page": 1,
+        "line": 8
+      }
+    }
+  ]
+}

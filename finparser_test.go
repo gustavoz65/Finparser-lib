@@ -30,12 +30,14 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// writeSyntheticPDFs regrava os PDFs de testdata/synthetic a partir dos
-// layouts de internal/testgen.
+// writeSyntheticPDFs regrava os PDFs e a planilha de testdata/synthetic a
+// partir dos layouts de internal/testgen.
 func writeSyntheticPDFs() error {
 	docs := map[string]testgen.Doc{
-		"nubank_conta.pdf": testgen.NubankConta(),
-		"itau_conta.pdf":   testgen.ItauConta(),
+		"nubank_conta.pdf":   testgen.NubankConta(),
+		"itau_conta.pdf":     testgen.ItauConta(),
+		"bradesco_conta.pdf": testgen.BradescoConta(),
+		"caixa_conta.pdf":    testgen.CaixaConta(),
 	}
 	for name, d := range docs {
 		b, err := testgen.PDF(d)
@@ -46,7 +48,23 @@ func writeSyntheticPDFs() error {
 			return err
 		}
 	}
-	return nil
+	day := func(d int) time.Time { return time.Date(2026, 3, d, 0, 0, 0, 0, time.UTC) }
+	sheet, err := testgen.XLSX([][]any{
+		{"Banco Inter S.A."},
+		{"Conta", "0000000-0"},
+		{"Período", "01/03/2026 a 31/03/2026"},
+		{},
+		{"Data Lançamento", "Histórico", "Descrição", "Valor", "Saldo"},
+		{day(1), "Saldo anterior", nil, nil, 1500.0},
+		{day(2), "Pix recebido", "Fulano de Tal", 250.0, 1750.0},
+		{day(3), "Compra no débito", "Mercado Fictício", -87.35, 1662.65},
+		{day(5), "Pagamento de boleto", "Companhia de Água", -120.1, 1542.55},
+		{day(9), "Pix enviado", "Beltrana da Silva", -42.55, 1500.0},
+	})
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join("testdata", "synthetic", "inter_conta.xlsx"), sheet, 0o644)
 }
 
 // golden compara st com testdata/golden/<name>.json.

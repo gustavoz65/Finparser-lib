@@ -1,5 +1,10 @@
 {
   "format": "ofx",
+  "account": {
+    "number": "0000",
+    "type": "creditcard"
+  },
+  "currency": "BRL",
   "period_start": "2026-02-01T00:00:00Z",
   "period_end": "2026-02-28T00:00:00Z",
   "transactions": [

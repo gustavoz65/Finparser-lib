@@ -2,6 +2,7 @@
   "format": "csv",
   "period_start": "2026-03-02T00:00:00Z",
   "period_end": "2026-03-05T00:00:00Z",
+  "opening_balance": "500",
   "transactions": [
     {
       "date": "2026-03-02T00:00:00Z",
@@ -9,6 +10,7 @@
       "amount": "250",
       "balance": "750",
       "kind": "income",
+      "method": "pix",
       "id": "32cebd6aaa63a1e2981d605a",
       "raw": [
         "02/03/2026",
@@ -28,6 +30,7 @@
       "amount": "-89.9",
       "balance": "660.1",
       "kind": "expense",
+      "method": "card",
       "id": "1ac0d93cbda76d04fd5105f8",
       "raw": [
         "03/03/2026",
@@ -47,6 +50,7 @@
       "amount": "-15",
       "balance": "645.1",
       "kind": "expense",
+      "method": "fee",
       "id": "dcdb7f23edb608e36d0d6b71",
       "raw": [
         "04/03/2026",
@@ -66,6 +70,7 @@
       "amount": "-100",
       "balance": "545.1",
       "kind": "expense",
+      "method": "transfer",
       "id": "208675e52434ab46b9172564",
       "raw": [
         "05/03/2026",

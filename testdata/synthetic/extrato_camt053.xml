@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02">
+  <BkToCstmrStmt>
+    <GrpHdr><MsgId>MSG-0001</MsgId><CreDtTm>2026-04-01T08:00:00</CreDtTm></GrpHdr>
+    <Stmt>
+      <Id>STMT-2026-03</Id>
+      <FrToDt><FrDtTm>2026-03-01T00:00:00</FrDtTm><ToDtTm>2026-03-31T23:59:59</ToDtTm></FrToDt>
+      <Acct>
+        <Id><IBAN>BR0000000000000000000000000C1</IBAN></Id>
+        <Ccy>BRL</Ccy>
+        <Svcr><FinInstnId><BIC>FICTBRSP</BIC><Nm>Banco Fictício S.A.</Nm></FinInstnId></Svcr>
+      </Acct>
+      <Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="BRL">1000.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Dt><Dt>2026-03-01</Dt></Dt></Bal>
+      <Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="BRL">4424.20</Amt><CdtDbtInd>CRDT</CdtDbtInd><Dt><Dt>2026-03-31</Dt></Dt></Bal>
+      <Ntry>
+        <Amt Ccy="BRL">3500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-03-02</Dt></BookgDt><ValDt><Dt>2026-03-02</Dt></ValDt>
+        <AcctSvcrRef>FICT-2026-000001</AcctSvcrRef>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>E0000000020260302000000000001</EndToEndId></Refs>
+          <RltdPties><Dbtr><Nm>Empresa Fictícia Ltda</Nm></Dbtr><Cdtr><Nm>Fulana de Tal</Nm></Cdtr></RltdPties>
+          <RmtInf><Ustrd>Salário março/2026</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="BRL">45.90</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts>BOOK</Sts>
+        <BookgDt><DtTm>2026-03-03T10:30:00-03:00</DtTm></BookgDt>
+        <AcctSvcrRef>FICT-2026-000002</AcctSvcrRef>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>NOTPROVIDED</EndToEndId></Refs>
+          <RltdPties><Cdtr><Nm>Padaria São João</Nm></Cdtr></RltdPties>
+        </TxDtls></NtryDtls>
+        <AddtlNtryInf>Compra no débito</AddtlNtryInf>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="BRL">29.90</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-03-10</Dt></BookgDt>
+        <AcctSvcrRef>FICT-2026-000003</AcctSvcrRef>
+        <AddtlNtryInf>Tarifa pacote de serviços</AddtlNtryInf>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

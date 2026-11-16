@@ -1,0 +1,67 @@
+{
+  "format": "csv",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Pix recebido - Fulano de Tal",
+      "amount": "250",
+      "balance": "1750",
+      "kind": "income",
+      "method": "pix",
+      "counterparty": "Fulano de Tal",
+      "id": "d2bbe2e474408c7813e83381",
+      "raw": [
+        "02/03/2026",
+        "Pix recebido",
+        "Fulano de Tal",
+        "250,00",
+        "1.750,00"
+      ],
+      "source": {
+        "line": 7
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Compra no débito - Mercado Fictício",
+      "amount": "-87.35",
+      "balance": "1662.65",
+      "kind": "expense",
+      "method": "card",
+      "counterparty": "Mercado Fictício",
+      "id": "b84cb1aa557a654756db8d56",
+      "raw": [
+        "03/03/2026",
+        "Compra no débito",
+        "Mercado Fictício",
+        "-87,35",
+        "1.662,65"
+      ],
+      "source": {
+        "line": 8
+      }
+    },
+    {
+      "date": "2026-03-09T00:00:00Z",
+      "description": "Pix enviado - Beltrana da Silva",
+      "amount": "-42.55",
+      "balance": "1620.1",
+      "kind": "expense",
+      "method": "pix",
+      "counterparty": "Beltrana da Silva",
+      "id": "96fd12ea42273368427277ab",
+      "raw": [
+        "09/03/2026",
+        "Pix enviado",
+        "Beltrana da Silva",
+        "-42,55",
+        "1.620,10"
+      ],
+      "source": {
+        "line": 9
+      }
+    }
+  ]
+}

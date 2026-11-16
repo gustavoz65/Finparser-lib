@@ -1,7 +1,15 @@
-// Package finparser lê extratos bancários brasileiros (OFX, QIF, CSV e PDF
-// com camada de texto) e devolve transações padronizadas: data civil,
-// descrição limpa, valor decimal exato, saldo opcional e tipo
-// (receita/despesa).
+// Package finparser lê extratos bancários (OFX, QIF, CSV, XLSX, HTML, PDF
+// com camada de texto, ISO 20022 camt.053 e SWIFT MT940) e devolve
+// transações padronizadas: data civil, descrição limpa, valor decimal
+// exato, saldo opcional, tipo (receita/despesa), meio de pagamento e
+// contraparte. O foco são os extratos de bancos brasileiros.
+//
+// Além de ler, a lib confere: Statement.Reconcile prova, pelos saldos que o
+// próprio extrato declara, que nenhum lançamento faltou ou veio com o valor
+// errado. E converte: WriteOFX, WriteCSV e WriteJSON gravam o extrato
+// padronizado, então um PDF vira OFX em duas chamadas.
+//
+// Parse é seguro para uso concorrente: a lib não tem estado global.
 //
 // Uso básico:
 //
@@ -22,17 +30,24 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
+	"github.com/gustavoz65/finparser-lib/internal/camt"
 	"github.com/gustavoz65/finparser-lib/internal/classify"
 	"github.com/gustavoz65/finparser-lib/internal/csv"
 	"github.com/gustavoz65/finparser-lib/internal/detect"
+	"github.com/gustavoz65/finparser-lib/internal/enrich"
+	"github.com/gustavoz65/finparser-lib/internal/htmltable"
+	"github.com/gustavoz65/finparser-lib/internal/mt940"
 	"github.com/gustavoz65/finparser-lib/internal/ofx"
 	"github.com/gustavoz65/finparser-lib/internal/pdf"
 	"github.com/gustavoz65/finparser-lib/internal/profile"
 	"github.com/gustavoz65/finparser-lib/internal/qif"
 	"github.com/gustavoz65/finparser-lib/internal/record"
+	"github.com/gustavoz65/finparser-lib/internal/table"
 	"github.com/gustavoz65/finparser-lib/internal/textenc"
+	"github.com/gustavoz65/finparser-lib/internal/xlsx"
 )
 
 // Parse lê um extrato de r. O formato é detectado pelos bytes, a menos que
@@ -50,19 +65,59 @@ func Parse(r io.Reader, opts ...Option) (*Statement, error) {
 	return parseBytes(data, cfg)
 }
 
+// ParseBytes é Parse para quem já tem o arquivo em memória. O limite de
+// WithMaxBytes vale do mesmo jeito.
+func ParseBytes(data []byte, opts ...Option) (*Statement, error) {
+	cfg := newConfig(opts)
+	if int64(len(data)) > cfg.maxBytes {
+		return nil, fmt.Errorf("%w (%d bytes)", ErrTooLarge, cfg.maxBytes)
+	}
+	return parseBytes(data, cfg)
+}
+
+// ParseFile abre e lê o arquivo em path. O formato vem dos bytes, nunca da
+// extensão.
+func ParseFile(path string, opts ...Option) (*Statement, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("finparser: %w", err)
+	}
+	defer func() { _ = f.Close() }()
+	return Parse(f, opts...)
+}
+
+// DetectFormat diz o formato de data olhando os bytes, sem interpretar o
+// arquivo. Devolve "" quando não reconhece.
+func DetectFormat(data []byte) Format {
+	switch detect.Detect(data) {
+	case detect.PDF:
+		return FormatPDF
+	case detect.OFX:
+		return FormatOFX
+	case detect.QIF:
+		return FormatQIF
+	case detect.CSV:
+		return FormatCSV
+	case detect.XLSX:
+		return FormatXLSX
+	case detect.HTML:
+		return FormatHTML
+	case detect.CAMT:
+		return FormatCAMT
+	case detect.MT940:
+		return FormatMT940
+	}
+	return ""
+}
+
 func parseBytes(data []byte, cfg config) (*Statement, error) {
 	format := cfg.format
 	if format == "" {
-		switch detect.Detect(data) {
-		case detect.PDF:
-			format = FormatPDF
-		case detect.OFX:
-			format = FormatOFX
-		case detect.QIF:
-			format = FormatQIF
-		case detect.CSV:
-			format = FormatCSV
-		default:
+		format = DetectFormat(data)
+		if format == "" {
+			if detect.Detect(data) == detect.XLS {
+				return nil, fmt.Errorf("%w: Excel binário antigo (.xls) não é suportado; exporte como .xlsx ou CSV", ErrUnknownFormat)
+			}
 			return nil, ErrUnknownFormat
 		}
 	}
@@ -74,17 +129,28 @@ func parseBytes(data []byte, cfg config) (*Statement, error) {
 		res *record.Result
 		err error
 	)
+	tab := table.Options{Reference: cfg.reference}
+	if p, ok := profile.Lookup(cfg.bank); ok {
+		tab.Profile = p
+	}
 	switch format {
 	case FormatOFX:
 		text, _ := textenc.ToUTF8(data)
 		res, err = ofx.Parse(string(text))
 	case FormatCSV:
 		text, _ := textenc.ToUTF8(data)
-		opt := csv.Options{Reference: cfg.reference}
-		if p, ok := profile.Lookup(cfg.bank); ok {
-			opt.Profile = p
-		}
-		res, err = csv.Parse(string(text), opt)
+		res, err = csv.Parse(string(text), tab)
+	case FormatXLSX:
+		res, err = xlsx.Parse(data, tab)
+	case FormatHTML:
+		text, _ := textenc.ToUTF8(data)
+		res, err = htmltable.Parse(string(text), tab)
+	case FormatCAMT:
+		text, _ := textenc.ToUTF8(data)
+		res, err = camt.Parse(string(text))
+	case FormatMT940:
+		text, _ := textenc.ToUTF8(data)
+		res, err = mt940.Parse(string(text))
 	case FormatPDF:
 		opt := pdf.Options{
 			Password:     cfg.password,
@@ -130,23 +196,31 @@ func finish(format Format, res *record.Result) (*Statement, error) {
 	res.Warnings = append(res.Warnings, warns...)
 
 	st := &Statement{
-		Format:       format,
-		Bank:         res.Bank,
-		PeriodStart:  res.PeriodStart,
-		PeriodEnd:    res.PeriodEnd,
-		Transactions: make([]Transaction, len(res.Records)),
+		Format:         format,
+		Bank:           res.Bank,
+		Currency:       res.Currency,
+		PeriodStart:    res.PeriodStart,
+		PeriodEnd:      res.PeriodEnd,
+		OpeningBalance: res.OpeningBalance,
+		ClosingBalance: res.ClosingBalance,
+		Transactions:   make([]Transaction, len(res.Records)),
+	}
+	if res.Account != (record.Account{}) {
+		st.Account = &Account{BankID: res.Account.BankID, Branch: res.Account.Branch, Number: res.Account.Number, Type: res.Account.Type}
 	}
 	ids := assignIDs(res.Records)
 	for i, r := range res.Records {
 		st.Transactions[i] = Transaction{
-			Date:        r.Date,
-			Description: r.Description,
-			Amount:      r.Amount,
-			Balance:     r.Balance,
-			Kind:        Kind(r.Kind),
-			ID:          ids[i],
-			Raw:         r.Raw,
-			Source:      Location{Page: r.Page, Line: r.Line},
+			Date:         r.Date,
+			Description:  r.Description,
+			Amount:       r.Amount,
+			Balance:      r.Balance,
+			Kind:         Kind(r.Kind),
+			Method:       Method(enrich.Method(r.Description)),
+			Counterparty: enrich.Counterparty(r.Description),
+			ID:           ids[i],
+			Raw:          r.Raw,
+			Source:       Location{Page: r.Page, Line: r.Line},
 		}
 		// Sem período declarado na fonte: usa a menor e a maior data.
 		if res.PeriodStart.IsZero() && (st.PeriodStart.IsZero() || r.Date.Before(st.PeriodStart)) {

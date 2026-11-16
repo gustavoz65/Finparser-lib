@@ -1,14 +1,23 @@
 {
   "format": "ofx",
   "bank": "nubank",
+  "account": {
+    "bank_id": "0260",
+    "number": "12345-6",
+    "type": "checking"
+  },
+  "currency": "BRL",
   "period_start": "2026-03-01T00:00:00Z",
   "period_end": "2026-03-31T00:00:00Z",
+  "closing_balance": "3334.1",
   "transactions": [
     {
       "date": "2026-03-02T00:00:00Z",
       "description": "Transferência recebida - EMPRESA FICTÍCIA LTDA",
       "amount": "3500",
       "kind": "income",
+      "method": "transfer",
+      "counterparty": "EMPRESA FICTÍCIA LTDA",
       "id": "abc-001",
       "raw": [
         "TRNTYPE=CREDIT",
@@ -26,6 +35,8 @@
       "description": "Compra no débito - PADARIA SÃO JOÃO",
       "amount": "-45.9",
       "kind": "expense",
+      "method": "card",
+      "counterparty": "PADARIA SÃO JOÃO",
       "id": "abc-002",
       "raw": [
         "TRNTYPE=DEBIT",
@@ -43,6 +54,8 @@
       "description": "PIX ENVIADO - Fulano de Tal",
       "amount": "-120",
       "kind": "expense",
+      "method": "pix",
+      "counterparty": "Fulano de Tal",
       "id": "99df2dceaaa1cb6a2bdd314b",
       "raw": [
         "TRNTYPE=DEBIT",

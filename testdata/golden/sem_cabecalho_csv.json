@@ -43,6 +43,7 @@
       "amount": "-10",
       "balance": "1144.1",
       "kind": "expense",
+      "method": "fee",
       "id": "686dbf5674caf8cbb9414e6d",
       "raw": [
         "04/03",

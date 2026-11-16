@@ -3,6 +3,7 @@
   "bank": "nubank",
   "period_start": "2026-03-01T00:00:00Z",
   "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "1000",
   "transactions": [
     {
       "date": "2026-03-01T00:00:00Z",
@@ -10,6 +11,8 @@
       "amount": "3500",
       "balance": "4500",
       "kind": "income",
+      "method": "pix",
+      "counterparty": "EMPRESA FICTÍCIA LTDA",
       "id": "80d1c65e849ea4813c9d313f",
       "raw": [
         "",
@@ -29,6 +32,8 @@
       "description": "Compra no débito PADARIA SÃO JOÃO",
       "amount": "-45.9",
       "kind": "expense",
+      "method": "card",
+      "counterparty": "PADARIA SÃO JOÃO",
       "id": "d809b320b53ee614b67eb8cb",
       "raw": [
         "",
@@ -49,6 +54,8 @@
       "amount": "-45.9",
       "balance": "4408.2",
       "kind": "expense",
+      "method": "card",
+      "counterparty": "PADARIA SÃO JOÃO",
       "id": "dd2aac075affaa199d37bfe9",
       "raw": [
         "",
@@ -68,6 +75,7 @@
       "description": "Rendimento da conta",
       "amount": "0.87",
       "kind": "income",
+      "method": "interest",
       "id": "2695a0d6000554a98f8e3d33",
       "raw": [
         "",
@@ -85,6 +93,8 @@
       "amount": "-1200",
       "balance": "3209.07",
       "kind": "expense",
+      "method": "pix",
+      "counterparty": "FULANO DE TAL",
       "id": "28adf92c81626a69c96b9089",
       "raw": [
         "",

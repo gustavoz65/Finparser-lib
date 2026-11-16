@@ -3,6 +3,7 @@
   "bank": "itau",
   "period_start": "2026-03-01T00:00:00Z",
   "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "1000",
   "transactions": [
     {
       "date": "2026-03-02T00:00:00Z",
@@ -10,6 +11,8 @@
       "amount": "200",
       "balance": "1200",
       "kind": "income",
+      "method": "pix",
+      "counterparty": "FULANO",
       "id": "0c8d6f5307e0394bb181d7b6",
       "raw": [
         "02/03/2026",
@@ -27,6 +30,7 @@
       "description": "TAR PACOTE SERVICOS",
       "amount": "-29.9",
       "kind": "expense",
+      "method": "fee",
       "id": "adc2e6a4850a12cfff4c6cbe",
       "raw": [
         "03/03/2026",
@@ -45,6 +49,7 @@
       "amount": "-150.35",
       "balance": "1019.75",
       "kind": "expense",
+      "method": "boleto",
       "id": "068c8a4dfc50374b13502673",
       "raw": [
         "04/03/2026",

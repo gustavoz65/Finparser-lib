@@ -1,0 +1,58 @@
+{
+  "format": "mt940",
+  "account": {
+    "bank_id": "FICTBRSP",
+    "number": "0000000000"
+  },
+  "currency": "BRL",
+  "period_start": "2026-03-01T00:00:00Z",
+  "period_end": "2026-03-31T00:00:00Z",
+  "opening_balance": "1000",
+  "closing_balance": "4424.2",
+  "transactions": [
+    {
+      "date": "2026-03-02T00:00:00Z",
+      "description": "Empresa Ficticia Ltda - Salario marco/2026",
+      "amount": "3500",
+      "kind": "income",
+      "id": "FICT000001",
+      "raw": [
+        ":61:2603020302C3500,00NTRFNONREF//FICT000001",
+        ":86:?00PIX RECEBIDO?20Salario marco/2026?32Empresa Ficticia Ltda"
+      ],
+      "source": {
+        "line": 6
+      }
+    },
+    {
+      "date": "2026-03-03T00:00:00Z",
+      "description": "Padaria Sao Joao - COMPRA NO DEBITO",
+      "amount": "-45.9",
+      "kind": "expense",
+      "method": "card",
+      "id": "FICT000002",
+      "raw": [
+        ":61:2603030303D45,90NMSCFICT000002 COMPRA NO DEBITO",
+        ":86:Padaria Sao Joao"
+      ],
+      "source": {
+        "line": 8
+      }
+    },
+    {
+      "date": "2026-03-10T00:00:00Z",
+      "description": "Tarifa pacote de servicos",
+      "amount": "-29.9",
+      "kind": "expense",
+      "method": "fee",
+      "id": "c9da6e62f2186f66b46ea756",
+      "raw": [
+        ":61:2603100310D29,90NCHGNONREF",
+        ":86:Tarifa pacote de servicos"
+      ],
+      "source": {
+        "line": 11
+      }
+    }
+  ]
+}

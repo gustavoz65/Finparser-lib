@@ -1,0 +1,9 @@
+ Extrato Conta Corrente 
+ Conta ;0000000-0
+ Período ;01/03/2026 a 31/03/2026
+ Saldo ;1.500,00
+
+ Data Lançamento;Histórico;Descrição;Valor;Saldo
+02/03/2026;Pix recebido;Fulano de Tal;250,00;1.750,00
+03/03/2026;Compra no débito;Mercado Fictício;-87,35;1.662,65
+09/03/2026;Pix enviado;Beltrana da Silva;-42,55;1.620,10
