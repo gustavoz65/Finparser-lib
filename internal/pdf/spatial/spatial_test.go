@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gustavoz65/finparser-lib/internal/pdf/extract"
 )
@@ -284,6 +285,22 @@ func TestLinesManyWordsSameLine(t *testing.T) {
 	lines := Lines(ws, 0.5)
 	if len(lines) != 2 || len(lines[0].Words) != 500 || lines[0].FontSize != 9 {
 		t.Fatalf("len = %d, primeira = %d palavras, fonte %v", len(lines), len(lines[0].Words), lines[0].FontSize)
+	}
+}
+
+// Uma linha com centenas de milhares de palavras (PDF malicioso) não pode
+// custar tempo quadrático.
+func TestLinesHugeLineIsLinear(t *testing.T) {
+	ws := make([]Word, 300000)
+	for i := range ws {
+		ws[i] = Word{Page: 1, X0: float64(i), X1: float64(i) + 0.5, Y: 700, FontSize: 9, Text: "x"}
+	}
+	start := time.Now()
+	if lines := Lines(ws, 0.5); len(lines) != 1 {
+		t.Fatalf("len = %d", len(lines))
+	}
+	if d := time.Since(start); d > 3*time.Second {
+		t.Errorf("Lines levou %v", d)
 	}
 }
 

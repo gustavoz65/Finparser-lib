@@ -152,6 +152,9 @@ func splitSpaces(toks []extract.Token) []extract.Token {
 	return out
 }
 
+// fontSample é quantas palavras por linha entram na mediana da fonte.
+const fontSample = 256
+
 // Lines agrupa palavras em linhas (passo 2). Duas palavras estão na mesma
 // linha se |ΔY| ≤ tolerance × min(fonte A, fonte B), comparando com a
 // mediana do Y da linha atual (não com o último elemento, senão a linha
@@ -200,11 +203,15 @@ func Lines(words []Word, tolerance float64) []Line {
 		}
 		cur = append(cur, w)
 		ys = append(ys, w.Y)
-		f := fontOr(w.FontSize)
-		i := sort.SearchFloat64s(fonts, f)
-		fonts = append(fonts, 0)
-		copy(fonts[i+1:], fonts[i:])
-		fonts[i] = f
+		// Depois de fontSample palavras a mediana da fonte já não muda;
+		// parar de inserir mantém o custo linear numa linha gigante.
+		if len(fonts) < fontSample {
+			f := fontOr(w.FontSize)
+			i := sort.SearchFloat64s(fonts, f)
+			fonts = append(fonts, 0)
+			copy(fonts[i+1:], fonts[i:])
+			fonts[i] = f
+		}
 	}
 	flush()
 	return lines
